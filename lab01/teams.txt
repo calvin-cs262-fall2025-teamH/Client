@@ -1,0 +1,41 @@
+a. Demographics:
+
+i.   I am a junior!
+ii.  I am pursuing a double major in Computer Science (BCS) and English (BA) with a Linguistics Concentration!
+iii. In CS 112, I got a B, and I am currently in CS 212. 
+iv.  I am in section CS 262-B. I can attend the entire lab session!
+
+b. Technical:
+
+i.  I might train to work with DB2 this semester at my internship, but I have not formally worked
+    with those yet. 
+
+ii. I have used all of the above. I used Slack for some student communication but during my internship
+    for team communication as well. In a student project in Abstraction, we briefly used Trello, so 
+    I have some exposure. For Git/GitHub, I have briefly explored both out of my own interest, but we
+    also used GitHub in CS 112 for project submissions. 
+
+iii. Here is my project proposal:
+
+     My idea for an application that is both interesting and tractable would be an app that would use
+     a database of over-the-counter medications and their ingredients to compare a product to another
+     to see if there are cheaper options for customers. This would be useful for people who have a need
+     to buy medications regularly or are on a budget and were not aware of cheaper (and equivalent)
+     options.
+
+     But I am also interested in anything to do with ML and AI! I also like Micah's ideas
+     about the Financial Tracker and Lecture Note Taking!
+
+c. Personality:
+
+i.   My big-five personality type is:
+     79% Aggreableness.
+     77% Openness. 
+     65% Extraversion.
+     62.5% Conscientiousness.
+     46% Neuroticism.
+
+ii.  I think I probably should not work with Pauline since we are housemates and we want to avoid any
+     potential conflicts or disagreements!
+
+d. No, I don't think so!

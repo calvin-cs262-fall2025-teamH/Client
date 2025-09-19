@@ -1,0 +1,13 @@
+1. An application that you think is both interesting and tractable:
+
+   My idea for an application that is both interesting and tractable would be an app that would use
+   a database of over-the-counter medications and their ingredients to compare a product to another
+   to see if there are cheaper options for customers. This would be useful for people who have a need
+   to buy medications regularly or are on a budget and were not aware of cheaper (and equivalent)
+   options.
+
+2. A wacky application that would really be sweet, but is probably impossible to build:
+
+   My idea for a wacky application that would be really great to have is one where you can create a 
+   step-by-step langugae-learning course for any language on the planet with accurate immersion included.
+   Unfortunately, the immersion aspect is the hardest thing to correctly build without human contact. 
