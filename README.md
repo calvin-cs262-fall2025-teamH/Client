@@ -1,2 +1,6 @@
+## Related Repositories
+- [Service Repository](https://github.com/calvin-cs262-fall2025-teamH/Service)
+- [Project Repository](https://github.com/calvin-cs262-fall2025-teamH/Project)
+
 # Client-
-This one holds your client application code, e.g., the hello-world prototype you will commit/push for project 1.
+This one holds your client application code. 
