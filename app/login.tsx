@@ -4,7 +4,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { router } from 'expo-router';
 
-export default function Index() {
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -23,7 +23,7 @@ export default function Index() {
       if (response.ok) {
         // Store token if needed
         Alert.alert('Success', 'Logged in!');
-        router.replace('/(tabs)');
+        router.replace('/home');
       } else {
         Alert.alert('Error', data.error);
       }
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 12,
     marginTop: 16,
-    backgroundColor: '#8B2332',
+    backgroundColor: '#3b82f6',
     borderRadius: 8,
     alignItems: 'center',
   },

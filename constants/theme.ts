@@ -5,7 +5,7 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
+const tintColorLight = '#8B2332'; // Calvin maroon
 const tintColorDark = '#fff';
 
 export const Colors = {
@@ -16,6 +16,11 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    // Calvin color palette
+    maroon: '#8B2332',
+    maroonLight: '#f8e5e8',
+    maroonDark: '#6b1a26',
+    gold: '#C8B273',
   },
   dark: {
     text: '#ECEDEE',
@@ -24,6 +29,10 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    maroon: '#8B2332',
+    maroonLight: '#f8e5e8',
+    maroonDark: '#6b1a26',
+    gold: '#C8B273',
   },
 };
 
