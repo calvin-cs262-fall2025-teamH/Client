@@ -3,4 +3,4 @@
 - [Project Repository](https://github.com/calvin-cs262-fall2025-teamH/Project)
 
 # Client-
-This one holds your client application code. 
+This one holds your client application code.
