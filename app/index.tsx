@@ -4,6 +4,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { router } from 'expo-router';
 
+
 export default function Index() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
