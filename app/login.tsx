@@ -3,6 +3,7 @@ import { TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { router } from 'expo-router';
+import { API_ENDPOINTS } from '@/config/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,7 +11,7 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('http://localhost:3000/auth/login', {
+      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,7 +36,7 @@ export default function Login() {
 
   const handleRegister = async () => {
     try {
-      const response = await fetch('http://localhost:3000/auth/register', {
+      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +47,16 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', 'Account created!');
+        Alert.alert('Success', 'Account created! You can now login.', [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Clear the form
+              setEmail('');
+              setPassword('');
+            }
+          }
+        ]);
       } else {
         Alert.alert('Error', data.error);
       }
