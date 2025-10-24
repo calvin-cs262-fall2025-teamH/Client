@@ -10,7 +10,8 @@ export default function Index() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('http://localhost:3000/auth/login', {
+      console.log('Attempting login with:', email);
+      const response = await fetch('http://153.106.84.225:3000/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -18,24 +19,26 @@ export default function Index() {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (response.ok) {
         // Store token if needed
         Alert.alert('Success', 'Logged in!');
         router.replace('/(tabs)');
       } else {
-        Alert.alert('Error', data.error);
+        Alert.alert('Error', data.error || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Error', 'Failed to login');
+      Alert.alert('Error', 'Failed to login: ' + (error as Error).message);
     }
   };
 
   const handleRegister = async () => {
     try {
-      const response = await fetch('http://localhost:3000/auth/register', {
+      const response = await fetch('http://153.106.84.225:3000/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
