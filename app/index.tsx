@@ -3,7 +3,6 @@ import { TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { router } from 'expo-router';
-import { API_ENDPOINTS } from '@/config/api';
 
 export default function Index() {
   const [email, setEmail] = useState('');
@@ -11,7 +10,8 @@ export default function Index() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
+      console.log('Attempting login with:', email);
+      const response = await fetch('http://153.106.84.225:3000/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -19,24 +19,26 @@ export default function Index() {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (response.ok) {
         // Store token if needed
         Alert.alert('Success', 'Logged in!');
         router.replace('/(tabs)');
       } else {
-        Alert.alert('Error', data.error);
+        Alert.alert('Error', data.error || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Error', 'Failed to login');
+      Alert.alert('Error', 'Failed to login: ' + (error as Error).message);
     }
   };
 
   const handleRegister = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
+      const response = await fetch('http://153.106.84.225:3000/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,16 +49,7 @@ export default function Index() {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', 'Account created! You can now login.', [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Clear the form and focus on login
-              setEmail('');
-              setPassword('');
-            }
-          }
-        ]);
+        Alert.alert('Success', 'Account created!');
       } else {
         Alert.alert('Error', data.error);
       }
