@@ -1,0 +1,37 @@
+[
+    {
+        "id": "1",
+        "title": "Wireless Headphones",
+        "description": "High-quality wireless headphones with noise cancellation. Perfect for music lovers and professionals who need to focus in noisy environments.",
+        "category": "Electronics",
+        "price": 199.99
+    },
+    {
+        "id": "2",
+        "title": "Coffee Maker",
+        "description": "Programmable coffee maker with auto-brew feature. Wake up to freshly brewed coffee every morning with this reliable and easy-to-use machine.",
+        "category": "Kitchen",
+        "price": 89.99
+    },
+    {
+        "id": "3",
+        "title": "Running Shoes",
+        "description": "Comfortable running shoes with excellent cushioning and support. Designed for both casual joggers and serious runners.",
+        "category": "Sports",
+        "price": 129.99
+    },
+    {
+        "id": "4",
+        "title": "Laptop Stand",
+        "description": "Adjustable aluminum laptop stand for better ergonomics. Reduces neck strain and improves airflow around your laptop.",
+        "category": "Office",
+        "price": 45.99
+    },
+    {
+        "id": "5",
+        "title": "Smartphone Case",
+        "description": "Durable protective case with wireless charging compatibility. Keep your phone safe while maintaining full functionality.",
+        "category": "Electronics",
+        "price": 24.99
+    }
+]
