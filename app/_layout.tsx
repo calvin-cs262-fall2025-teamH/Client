@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { PartnerProvider } from './PartnerContext'; 
+import { PartnerProvider } from '../contexts/PartnerContext';
 
 export default function RootLayout() {
   return (

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
-import { usePartner } from './PartnerContext'; // ✅ Added: Import Partner Context
+import { useEffect, useState } from 'react';
+import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { usePartner } from '../contexts/PartnerContext'; // ✅ Added: Import Partner Context
 
 export default function ConnectPartner() {
   const [myCode, setMyCode] = useState('');

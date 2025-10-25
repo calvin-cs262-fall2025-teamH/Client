@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { API_BASE_URL } from '@/config/api';
 import { router } from 'expo-router';
+import { useState } from 'react';
+import { Alert, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+
 
 export default function Index() {
   const [email, setEmail] = useState('');
@@ -11,7 +13,7 @@ export default function Index() {
   const handleLogin = async () => {
     try {
       console.log('Attempting login with:', email);
-      const response = await fetch('http://153.106.84.225:3000/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`,{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -38,7 +40,7 @@ export default function Index() {
 
   const handleRegister = async () => {
     try {
-      const response = await fetch('http://153.106.84.225:3000/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
