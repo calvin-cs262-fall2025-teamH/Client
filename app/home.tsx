@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // ✅ 新增：引入全局 partner 状态，用于显示 partnerCode
-import { usePartner } from './PartnerContext';
+import { usePartner } from '../contexts/PartnerContext';
  
 
 export default function Home() {
