@@ -6,4 +6,5 @@
 This one holds your client application code.
 
 # Run comments
+
 npx expo start
