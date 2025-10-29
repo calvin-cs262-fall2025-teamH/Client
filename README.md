@@ -4,3 +4,7 @@
 
 # Client-
 This one holds your client application code.
+
+# run comment
+
+npx expo start
