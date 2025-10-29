@@ -12,8 +12,13 @@ export default function Index() {
 
   const handleLogin = async () => {
     try {
-      console.log('Attempting login with:', email);
-      const response = await fetch(`${API_BASE_URL}/auth/login`,{
+      const url = `${API_BASE_URL}/api/auth/login`;
+      console.log('=== LOGIN DEBUG ===');
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('Full URL:', url);
+      console.log('Email:', email);
+      
+      const response = await fetch(url,{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,7 +45,14 @@ export default function Index() {
 
   const handleRegister = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const url = `${API_BASE_URL}/api/auth/register`;
+      console.log('=== REGISTER DEBUG ===');
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('Full URL:', url);
+      console.log('Email:', email);
+      console.log('Password length:', password.length);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,7 +60,9 @@ export default function Index() {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (response.ok) {
         Alert.alert('Success', 'Account created!');
@@ -57,7 +71,8 @@ export default function Index() {
       }
     } catch (error) {
       console.error('Register error:', error);
-      Alert.alert('Error', 'Failed to register');
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      Alert.alert('Error', `Failed to register: ${(error as Error).message}\n\nURL was: ${API_BASE_URL}`);
     }
   };
 
