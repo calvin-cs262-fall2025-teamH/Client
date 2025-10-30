@@ -8,4 +8,4 @@
 //
 // Example: export const API_URL = 'http://192.168.1.100:3000';
 
-export const API_URL = 'http://YOUR_IP_ADDRESS_HERE:3000';
+export const API_URL = 'http://153.106.215.92:3000';
