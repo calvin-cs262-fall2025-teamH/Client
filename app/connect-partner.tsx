@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { usePartner } from '../contexts/PartnerContext'; // ✅ Added: Import Partner Context
 
 export default function ConnectPartner() {
   const [myCode, setMyCode] = useState('');
   const [partnerCode, setPartnerCode] = useState('');
+
+  const { setPartnerCode: setPartnerCodeContext } = usePartner(); // ✅ Added: Get setter from Context
 
   useEffect(() => {
     // Generate a unique code for this user
@@ -23,7 +26,8 @@ export default function ConnectPartner() {
     }
 
     try {
-      // TODO: Call backend to connect with partner using partnerCode
+      // Save partner code to Context
+      setPartnerCodeContext(partnerCode); // ✅ Added: Save partner code to Context
       Alert.alert('Success', 'Connected with partner!');
       router.back();
     } catch (error) {

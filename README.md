@@ -2,9 +2,10 @@
 - [Service Repository](https://github.com/calvin-cs262-fall2025-teamH/Service)
 - [Project Repository](https://github.com/calvin-cs262-fall2025-teamH/Project)
 
-# Client-
-This one holds your client application code.
+# Client
+This repository holds the client application code for the project.
 
-# run comment
+## Run
+To start the Expo development server:
 
 npx expo start
