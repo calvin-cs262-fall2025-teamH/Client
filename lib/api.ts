@@ -5,10 +5,11 @@
 // api.ts
 import * as SecureStore from "expo-secure-store";
 
-// 注意：统一包含 /api 前缀！
-// 开发时用本机 IP（非 127.0.0.1），手机真机才能访问你的电脑
+
 export const BASE =
+
   process.env.EXPO_PUBLIC_API_BASE || "http://153.106.215.92:3000/api";
+
 
 console.log(">>> Using lib/api.ts, BASE =", BASE);
 const TOKEN_KEY = "auth_token";
@@ -60,7 +61,7 @@ export const api = {
   async register(email: string, password: string) {
     console.log('api.register ->', BASE + '/auth/register');
     const data = await http<{ token: string; user: { id: number; email: string } }>(
-      "/auth/register",
+      "/api/auth/register",
       { method: "POST", body: JSON.stringify({ email, password }) }
     );
     if (data.token) await saveToken(data.token);
@@ -70,7 +71,7 @@ export const api = {
   async login(email: string, password: string) {
     console.log('api.login ->', BASE + '/auth/login');
     const data = await http<{ token: string; user: { id: number; email: string } }>(
-      "/auth/login",
+      "/api/auth/login",
       { method: "POST", body: JSON.stringify({ email, password }) }
     );
     if (data.token) await saveToken(data.token);
@@ -80,7 +81,7 @@ export const api = {
   async me() {
     const token = await getToken();
     if (!token) throw new Error("No token");
-    return http<{ user: { id: number; email: string } }>("/auth/me", {
+    return http<{ user: { id: number; email: string } }>("/api/auth/me", {
       headers: { Authorization: `Bearer ${token}` },
     });
   },

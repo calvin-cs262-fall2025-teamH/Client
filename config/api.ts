@@ -1,5 +1,6 @@
 // API Configuration
 // Change this to your computer's IP address when running on mobile devices
+
 // Use Platform.OS to reliably detect running on web vs native
 import { Platform } from 'react-native';
 
@@ -12,11 +13,11 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE || DEFAULT_BASE;
 console.log(">>> Using config/api.ts, API_BASE_URL =", API_BASE_URL);
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: `${API_BASE_URL}/auth/login`,
-    REGISTER: `${API_BASE_URL}/auth/register`,
+    LOGIN: `${API_BASE_URL}/api/auth/login`,
+    REGISTER: `${API_BASE_URL}/api/auth/register`,
   },
   USER: {
-    PROFILE: `${API_BASE_URL}/user/profile`,
+    PROFILE: `${API_BASE_URL}/api/user/profile`,
   }
 };
 
