@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://10.25.12.228:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.85.116:4000";
 
 const TOKEN_KEY = "auth_token";
 
