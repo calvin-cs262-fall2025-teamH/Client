@@ -3,24 +3,53 @@ import { TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'reac
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { router } from 'expo-router';
+import { API_BASE_URL } from '@/config/api';
+
+import { useLocalSearchParams } from 'expo-router';
+
+
 
 export default function Profile() {
+  const { userId } = useLocalSearchParams<{ userId: string }>();
   const [name, setName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [major, setMajor] = useState('');
   const [year, setYear] = useState('');
   const [hobby, setHobby] = useState('');
 
+  
+
   const handleSave = async () => {
+    console.log('--- Saving profile ---');
+    console.log('userId:', userId);
+    console.log('Profile data:', { name, dateOfBirth, major, year, hobby });
     try {
-      // TODO: Call backend to save profile
+      const response = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          dateOfBirth,
+          major,
+          year,
+          hobby,
+        }),
+      });
+
+    const data = await response.json();
+    console.log('Profile save response:', data);
+
+    if (response.ok) {
       Alert.alert('Success', 'Profile updated!');
       router.back();
-    } catch (error) {
-      console.error('Save profile error:', error);
-      Alert.alert('Error', 'Failed to save profile');
+    } else {
+      Alert.alert('Error', data.error || 'Failed to update profile');
     }
-  };
+  } catch (error) {
+    console.error('Save profile error:', error);
+    Alert.alert('Error', 'Failed to save profile');
+  }
+};
 
   return (
     <ScrollView>
