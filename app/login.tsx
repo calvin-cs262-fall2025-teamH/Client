@@ -33,16 +33,9 @@ export default function Login() {
   // };
     const handleLogin = async () => {
     try {
-      const data = await api.login(email, password); // data = { user, token }
-      const userId = data.user.id; // 获取登录用户的 id
-      
-      // 把 userId 通过 router params 传给 Profile 页面
-      router.replace({
-        pathname: '/profile',
-        params: { userId }
-      });
-
-      Alert.alert('Success', 'Logged in!');       
+      await api.login(email, password); 
+      Alert.alert('Success', 'Logged in!');
+      router.replace('/(tabs)');       
     } catch (err: any) {
       Alert.alert('Login Failure', err.message || 'invalid password or email！');
     }

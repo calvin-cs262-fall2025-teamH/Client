@@ -1,23 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { router } from 'expo-router';
 import { API_BASE_URL } from '@/config/api';
 
-import { useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
 export default function Profile() {
-  const { userId } = useLocalSearchParams<{ userId: string }>();
+  const [userId, setUserId] = useState<string | null>(null);
+  
   const [name, setName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [major, setMajor] = useState('');
   const [year, setYear] = useState('');
   const [hobby, setHobby] = useState('');
-
   
+  // 从 AsyncStorage 获取 userId
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const id = await AsyncStorage.getItem('userId');
+        if (id) {
+          setUserId(id);
+          console.log('Profile page userId:', id);
+        } else {
+          console.warn('No userId found in AsyncStorage');
+        }
+      } catch (err) {
+        console.error('Failed to get userId from storage:', err);
+      }
+    };
+
+    fetchUserId();
+  }, []);
 
   const handleSave = async () => {
     console.log('--- Saving profile ---');

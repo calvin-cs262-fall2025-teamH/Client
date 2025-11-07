@@ -4,7 +4,7 @@ import { API_BASE_URL } from '@/config/api';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Index() {
   const [email, setEmail] = useState('');
@@ -29,6 +29,12 @@ export default function Index() {
       console.log('Response status:', response.status);
       const data = await response.json();
       console.log('Response data:', data);
+      
+      
+      await AsyncStorage.setItem('userId', data.user.id);
+      // ✅ 立即读取验证
+      const storedId = await AsyncStorage.getItem('userId');
+      console.log('Stored userId in AsyncStorage:', storedId);
 
       if (response.ok) {
         // Store token if needed
@@ -63,6 +69,10 @@ export default function Index() {
       console.log('Response status:', response.status);
       const data = await response.json();
       console.log('Response data:', data);
+      
+
+
+
 
       if (response.ok) {
         Alert.alert('Success', 'Account created!');
