@@ -1,4 +1,4 @@
-// Client/app/(tabs)/collage.tsx
+// Client/app/memories-timeline.tsx
 import { api } from '@/lib/api';
 import { TimelineActivity } from '@/types/api';
 import { router } from 'expo-router';
@@ -7,52 +7,31 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  SafeAreaView,
 } from 'react-native';
 
-// Diverse emoji collection for memories - all emotions welcome
-const memoryEmojis = [
-  '❤️', '💔', '😊', '😢', '🎉', '💑', '🌹', '💖', '😭', '🥰',
-  '😡', '😤', '😠', '🤬', '😞', '😔', '😩', '😫', '🥺', '😖', '💢', '👿'
-];
-
-export default function CollageTab() {
+export default function MemoriesTimelineScreen() {
   const [activities, setActivities] = useState<TimelineActivity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [emptyEmoji, setEmptyEmoji] = useState('💕');
 
   useEffect(() => {
     loadTimeline();
-    // Set random emoji for empty state
-    setEmptyEmoji(memoryEmojis[Math.floor(Math.random() * memoryEmojis.length)]);
   }, []);
 
   const loadTimeline = async () => {
     try {
-      console.log('[Collage] Loading timeline...');
       setLoading(true);
       const response = await api.getTimeline();
-      console.log('[Collage] Timeline response:', response);
       setActivities(response.data || []);
     } catch (error: any) {
-      console.error('[Collage] Timeline error:', error);
       Alert.alert('Error', error.message || 'Failed to load timeline');
     } finally {
       setLoading(false);
     }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadTimeline();
-    setRefreshing(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -66,37 +45,15 @@ export default function CollageTab() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#8B2332" />
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#FF6B9D" />
         <Text style={styles.loadingText}>Loading memories...</Text>
-        <TouchableOpacity
-          style={styles.debugButton}
-          onPress={() => {
-            Alert.alert(
-              'Debug Info',
-              'Check the console logs to see what\'s happening.\n\nIf stuck here, you likely need to pair with a partner first.',
-              [
-                { text: 'OK' },
-                { text: 'Go to Connect Partner', onPress: () => router.push('/connect-partner') }
-              ]
-            );
-          }}
-        >
-          <Text style={styles.debugButtonText}>Taking too long? Tap here</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B2332" />
-        }
-      >
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Our Memories</Text>
@@ -111,10 +68,10 @@ export default function CollageTab() {
       {/* Timeline */}
       {activities.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>{emptyEmoji}</Text>
+          <Text style={styles.emptyIcon}>📸</Text>
           <Text style={styles.emptyText}>No memories yet</Text>
           <Text style={styles.emptySubtext}>
-            Every relationship has ups and downs - capture them all! 💕😢🎉
+            Start creating beautiful memories together!
           </Text>
           <TouchableOpacity
             style={styles.createFirstButton}
@@ -124,7 +81,7 @@ export default function CollageTab() {
           </TouchableOpacity>
         </View>
       ) : (
-        activities.map((activity) => (
+        activities.map((activity, index) => (
           <TouchableOpacity
             key={activity.id}
             style={styles.timelineCard}
@@ -154,7 +111,7 @@ export default function CollageTab() {
             {/* Photo Grid */}
             {activity.photos.length > 0 && (
               <View style={styles.photoGrid}>
-                {activity.photos.slice(0, 3).map((photo) => (
+                {activity.photos.slice(0, 3).map((photo, photoIndex) => (
                   <View key={photo.id} style={styles.photoWrapper}>
                     <Image
                       source={{ uri: photo.photoUrl }}
@@ -178,19 +135,14 @@ export default function CollageTab() {
           </TouchableOpacity>
         ))
       )}
-      </ScrollView>
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f8e5e8',
-  },
   container: {
     flex: 1,
-    backgroundColor: '#f8e5e8',
+    backgroundColor: '#FFF5F7',
   },
   content: {
     padding: 20,
@@ -200,7 +152,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8e5e8',
+    backgroundColor: '#FFF5F7',
   },
   loadingText: {
     marginTop: 12,
@@ -213,16 +165,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#8B2332',
+    color: '#333',
     marginBottom: 16,
   },
   addButton: {
-    backgroundColor: '#8B2332',
+    backgroundColor: '#FF6B9D',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 25,
     alignSelf: 'flex-start',
-    shadowColor: '#8B2332',
+    shadowColor: '#FF6B9D',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -255,7 +207,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   createFirstButton: {
-    backgroundColor: '#8B2332',
+    backgroundColor: '#FF6B9D',
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 25,
@@ -275,11 +227,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: '#8B2332',
   },
   dateBadge: {
-    backgroundColor: '#f8e5e8',
+    backgroundColor: '#FFE5EE',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 12,
@@ -289,7 +239,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#8B2332',
+    color: '#FF6B9D',
   },
   activityTitle: {
     fontSize: 22,
@@ -350,20 +300,8 @@ const styles = StyleSheet.create({
   },
   viewDetails: {
     fontSize: 14,
-    color: '#8B2332',
+    color: '#FF6B9D',
     fontWeight: '600',
     textAlign: 'right',
-  },
-  debugButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#f8e5e8',
-    borderRadius: 8,
-  },
-  debugButtonText: {
-    fontSize: 12,
-    color: '#8B2332',
-    fontWeight: '600',
   },
 });

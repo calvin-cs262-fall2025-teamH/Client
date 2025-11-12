@@ -2,62 +2,98 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { usePartner } from '../contexts/PartnerContext'; // ✅ Added: Import Partner Context
+import { Alert, StyleSheet, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { usePartner } from '../contexts/PartnerContext';
 
 export default function ConnectPartner() {
-  const [myCode, setMyCode] = useState('');
-  const [partnerCode, setPartnerCode] = useState('');
-
-  const { setPartnerCode: setPartnerCodeContext } = usePartner(); // ✅ Added: Get setter from Context
+  const [partnerCodeInput, setPartnerCodeInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { myCode, generateCode, connectWithCode, hasPartner, partner } = usePartner();
 
   useEffect(() => {
-    // Generate a unique code for this user
-    const generateCode = () => {
-      return Math.random().toString(36).substring(2, 8).toUpperCase();
-    };
-    setMyCode(generateCode());
-  }, []);
+    // Check if already has partner
+    if (hasPartner) {
+      Alert.alert(
+        'Already Connected',
+        `You are already connected with ${partner?.name || partner?.email}`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    }
+  }, [hasPartner, partner]);
+
+  const handleGenerateCode = async () => {
+    try {
+      setLoading(true);
+      await generateCode();
+      Alert.alert('Code Generated', 'Your code has been generated. Share it with your partner!');
+    } catch (error: any) {
+      console.error('Generate code error:', error);
+      Alert.alert('Error', error.message || 'Failed to generate code');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleConnect = async () => {
-    if (!partnerCode) {
+    if (!partnerCodeInput.trim()) {
       Alert.alert('Error', 'Please enter your partner\'s code');
       return;
     }
 
     try {
-      // Save partner code to Context
-      setPartnerCodeContext(partnerCode); // ✅ Added: Save partner code to Context
-      Alert.alert('Success', 'Connected with partner!');
-      router.back();
-    } catch (error) {
+      setLoading(true);
+      await connectWithCode(partnerCodeInput.trim().toUpperCase());
+      Alert.alert(
+        'Success',
+        'Connected with partner successfully!',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error: any) {
       console.error('Connect partner error:', error);
-      Alert.alert('Error', 'Failed to connect with partner');
+      Alert.alert('Error', error.message || 'Failed to connect with partner');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const generateQRCode = () => {
-    // This would generate a QR code with myCode
-    // For now, just show the code
-    Alert.alert('Your Code', `Share this code with your partner:\n\n${myCode}`);
+  const showMyCode = () => {
+    if (myCode) {
+      Alert.alert('Your Code', `Share this code with your partner:\n\n${myCode}`);
+    } else {
+      Alert.alert('No Code', 'Please generate a code first');
+    }
   };
 
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title" style={styles.title}>Connect with Partner</ThemedText>
 
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#8B2332" />
+        </View>
+      )}
+
       {/* Display User's Code */}
       <View style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Your Connection Code</ThemedText>
-        <View style={styles.codeBox}>
-          <ThemedText style={styles.code}>{myCode}</ThemedText>
-        </View>
-        <TouchableOpacity style={styles.qrButton} onPress={generateQRCode}>
-          <ThemedText style={styles.qrButtonText}>📱 Show QR Code</ThemedText>
-        </TouchableOpacity>
-        <ThemedText style={styles.instruction}>
-          Share this code or QR code with your partner
-        </ThemedText>
+        {myCode ? (
+          <>
+            <View style={styles.codeBox}>
+              <ThemedText style={styles.code}>{myCode}</ThemedText>
+            </View>
+            <TouchableOpacity style={styles.qrButton} onPress={showMyCode}>
+              <ThemedText style={styles.qrButtonText}>📱 Show Code</ThemedText>
+            </TouchableOpacity>
+            <ThemedText style={styles.instruction}>
+              Share this code with your partner
+            </ThemedText>
+          </>
+        ) : (
+          <TouchableOpacity style={styles.button} onPress={handleGenerateCode} disabled={loading}>
+            <ThemedText style={styles.buttonText}>Generate Code</ThemedText>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Enter Partner's Code */}
@@ -66,17 +102,18 @@ export default function ConnectPartner() {
         <TextInput
           style={styles.input}
           placeholder="Enter code here"
-          value={partnerCode}
-          onChangeText={setPartnerCode}
+          value={partnerCodeInput}
+          onChangeText={setPartnerCodeInput}
           autoCapitalize="characters"
           maxLength={6}
+          editable={!loading}
         />
-        <TouchableOpacity style={styles.button} onPress={handleConnect}>
+        <TouchableOpacity style={styles.button} onPress={handleConnect} disabled={loading}>
           <ThemedText style={styles.buttonText}>Connect</ThemedText>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()} disabled={loading}>
         <ThemedText style={styles.backButtonText}>Back</ThemedText>
       </TouchableOpacity>
     </ThemedView>
@@ -111,9 +148,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   code: {
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: 'bold',
-    letterSpacing: 4,
+    letterSpacing: 3,
   },
   qrButton: {
     padding: 12,
@@ -167,5 +204,16 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
 });

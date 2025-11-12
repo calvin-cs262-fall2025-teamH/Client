@@ -1,60 +1,281 @@
 // Client/lib/api.ts
 import * as SecureStore from "expo-secure-store";
-
+import type {
+  ApiResponse,
+  AuthResponse,
+  Couple,
+  CreateCoupleResponse,
+  Activity,
+  ActivityWithPhotos,
+  CreateActivityRequest,
+  AddPhotoRequest,
+  Photo,
+  CalendarEvent,
+  CreateCalendarEventRequest,
+  Anniversary,
+  PrayerItem,
+  CreatePrayerRequest,
+  UpdatePrayerRequest,
+  TimelineActivity,
+} from "@/types/api";
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.85.116:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.221.201:4000";
+
+console.log('[api] BASE URL configured as:', BASE);
 
 const TOKEN_KEY = "auth_token";
 
 export async function saveToken(token: string) {
   await SecureStore.setItemAsync(TOKEN_KEY, token);
 }
+
 export async function getToken() {
   return SecureStore.getItemAsync(TOKEN_KEY);
 }
+
 export async function clearToken() {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 
-async function http<T>(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    ...options,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data?.error || `HTTP ${res.status}`);
+async function http<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+  try {
+    console.log(`[http] Fetching: ${BASE}${path}`);
+    const res = await fetch(`${BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    });
+    clearTimeout(timeoutId);
+
+    console.log(`[http] Response status: ${res.status} for ${path}`);
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+    }
+    return data as ApiResponse<T>;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.error(`[http] Request timeout after 30s for ${path}`);
+      throw new Error('Request timed out. Please check your connection and try again.');
+    }
+    console.error(`[http] Fetch error for ${path}:`, error.message);
+    throw error;
   }
-  return data as T;
+}
+
+async function authHttp<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const token = await getToken();
+  if (!token) {
+    console.error('[authHttp] No token found');
+    throw new Error("No token");
+  }
+  console.log(`[authHttp] Calling ${path} with method: ${options.method || 'GET'}`);
+  console.log(`[authHttp] Full URL: ${BASE}${path}`);
+  console.log(`[authHttp] Token exists: ${!!token}, length: ${token?.length}`);
+
+  try {
+    const startTime = Date.now();
+    const result = await http<T>(path, {
+      ...options,
+      headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` },
+    });
+    const elapsed = Date.now() - startTime;
+    console.log(`[authHttp] Success for ${path} in ${elapsed}ms:`, result);
+    return result;
+  } catch (error: any) {
+    console.error(`[authHttp] Error for ${path}:`, error.message);
+    throw error;
+  }
 }
 
 export const api = {
+  // ============= Auth APIs =============
   async register(email: string, password: string) {
-    const data = await http<{ token: string; user: { id: number; email: string } }>(
-      "/api/auth/register",
-      { method: "POST", body: JSON.stringify({ email, password }) }
-    );
-    if (data.token) await saveToken(data.token);
-    return data;
+    const response = await http<AuthResponse>("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    if (response.data?.token) await saveToken(response.data.token);
+    return response.data!;
   },
 
   async login(email: string, password: string) {
-    const data = await http<{ token: string; user: { id: number; email: string } }>(
-      "/api/auth/login",
-      { method: "POST", body: JSON.stringify({ email, password }) }
-    );
-    if (data.token) await saveToken(data.token);
-    return data;
+    const response = await http<AuthResponse>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    if (response.data?.token) await saveToken(response.data.token);
+    return response.data!;
   },
 
   async me() {
-    const token = await getToken();
-    if (!token) throw new Error("No token");
-    return http<{ user: { id: number; email: string } }>("/api/auth/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return authHttp<{ id: number; email: string }>("/api/auth/me");
   },
 
   logout: clearToken,
+
+  // ============= User/Partner APIs =============
+  async getProfile() {
+    return authHttp<{
+      id: number;
+      email: string;
+      name: string | null;
+      coupleId: number | null;
+      hasPartner: boolean;
+      partner: { id: number; email: string; name: string | null } | null;
+    }>("/api/user/profile");
+  },
+
+  async updateProfile(name: string) {
+    return authHttp<{ id: number; email: string; name: string }>("/api/user/profile", {
+      method: "PUT",
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  async generatePairingCode() {
+    return authHttp<{ code: string; expiresAt: string }>("/api/user/partner/generate-code", {
+      method: "POST",
+    });
+  },
+
+  async connectWithPartner(partnerCode: string) {
+    return authHttp<{ coupleId: number }>("/api/user/partner/connect", {
+      method: "POST",
+      body: JSON.stringify({ partnerCode }),
+    });
+  },
+
+  async getPartner() {
+    return authHttp<{
+      coupleId: number | null;
+      hasPartner: boolean;
+      partner: { id: number; email: string; name: string | null } | null;
+      connectedAt: string | null;
+    }>("/api/user/partner");
+  },
+
+  async unmatchPartner() {
+    return authHttp<void>("/api/user/partner/unmatch", {
+      method: "DELETE",
+    });
+  },
+
+  // ============= Couple APIs =============
+  async createCouple() {
+    return authHttp<CreateCoupleResponse>("/api/couple/create", {
+      method: "POST",
+    });
+  },
+
+  async joinCouple(inviteCode: string) {
+    return authHttp<{ coupleId: number }>("/api/couple/join", {
+      method: "POST",
+      body: JSON.stringify({ inviteCode }),
+    });
+  },
+
+  async getMyCouple() {
+    return authHttp<Couple | null>("/api/couple/me");
+  },
+
+  async leaveCouple() {
+    return authHttp<void>("/api/couple/leave", {
+      method: "DELETE",
+    });
+  },
+
+  // ============= Activity APIs =============
+  async createActivity(data: CreateActivityRequest) {
+    return authHttp<Activity>("/api/activities", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getActivities() {
+    return authHttp<Activity[]>("/api/activities");
+  },
+
+  async getActivity(id: number) {
+    return authHttp<ActivityWithPhotos>(`/api/activities/${id}`);
+  },
+
+  async deleteActivity(id: number) {
+    return authHttp<void>(`/api/activities/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  async addPhoto(activityId: number, data: AddPhotoRequest) {
+    return authHttp<Photo>(`/api/activities/${activityId}/photos`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getTimeline() {
+    return authHttp<TimelineActivity[]>("/api/activities/timeline/all");
+  },
+
+  // ============= Calendar APIs =============
+  async createCalendarEvent(data: CreateCalendarEventRequest) {
+    return authHttp<CalendarEvent>("/api/calendar/events", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getCalendarEvents() {
+    return authHttp<CalendarEvent[]>("/api/calendar/events");
+  },
+
+  async getUpcomingEvents() {
+    return authHttp<CalendarEvent[]>("/api/calendar/upcoming");
+  },
+
+  async getAnniversaries() {
+    return authHttp<Anniversary>("/api/calendar/anniversaries");
+  },
+
+  async deleteCalendarEvent(id: number) {
+    return authHttp<void>(`/api/calendar/events/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  // ============= Prayer APIs =============
+  async createPrayer(data: CreatePrayerRequest) {
+    return authHttp<PrayerItem>("/api/prayers", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getPrayers() {
+    return authHttp<PrayerItem[]>("/api/prayers");
+  },
+
+  async getPrayer(id: number) {
+    return authHttp<PrayerItem>(`/api/prayers/${id}`);
+  },
+
+  async updatePrayer(id: number, data: UpdatePrayerRequest) {
+    return authHttp<PrayerItem>(`/api/prayers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deletePrayer(id: number) {
+    return authHttp<void>(`/api/prayers/${id}`, {
+      method: "DELETE",
+    });
+  },
 };

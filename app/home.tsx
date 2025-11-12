@@ -1,20 +1,21 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-// ✅ 新增：引入全局 partner 状态，用于显示 partnerCode
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { usePartner } from '../contexts/PartnerContext';
- 
 
 export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState('❤️');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  // ✅ 新增：读取 partnerCode
-  const { partnerCode } = usePartner(); 
+  // ✅ Updated: Use new context API
+  const { hasPartner, partner, loading, unmatchPartner } = usePartner();
 
-  const emojis = ['❤️', '💕', '💖', '💗', '💓', '💝', '💞', '💘', '🥰', '😍', '🌹', '💐', '✨', '⭐', '🌟'];
+  const emojis = [
+    '❤️', '💕', '😊', '🥰', '🎉',  // Happy/Love
+    '💔', '😢', '😭', '😞', '🥺',  // Sad/Heartbreak
+    '😡', '😤', '😠', '💢', '😩'   // Angry/Frustration
+  ];
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -35,7 +36,7 @@ export default function Home() {
     );
   };
 
-  const handleUnmatch = () => {
+  const handleUnmatch = async () => {
     Alert.alert(
       'Unmatch Partner',
       'Are you sure you want to unmatch with your partner?',
@@ -44,9 +45,13 @@ export default function Home() {
         {
           text: 'Unmatch',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Call backend to unmatch partner
-            Alert.alert('Unmatched', 'You have been unmatched from your partner.');
+          onPress: async () => {
+            try {
+              await unmatchPartner();
+              Alert.alert('Success', 'You have been unmatched from your partner.');
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to unmatch');
+            }
           },
         },
       ]
@@ -55,6 +60,14 @@ export default function Home() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Loading State */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B2332" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      )}
+
       {/* Profiles */}
       <View style={styles.profileRow}>
         <TouchableOpacity style={styles.profileCard} onPress={() => router.push('/profile')}>
@@ -65,10 +78,10 @@ export default function Home() {
           <Text style={{ fontSize: 32 }}>{selectedEmoji}</Text>
         </TouchableOpacity>
 
-        {/* ✅ 新增：如果 partnerCode 存在，显示 Partner Profile，否则显示 Connect Partner */}
-        {partnerCode ? (
+        {/* ✅ Updated: Show partner info or connect button */}
+        {hasPartner && partner ? (
           <TouchableOpacity style={styles.profileCard}>
-            <Text style={styles.profileText}>Partner: {partnerCode}</Text>
+            <Text style={styles.profileText}>💑 {partner.name || partner.email}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.connectCard} onPress={() => router.push('/connect-partner')}>
@@ -123,8 +136,8 @@ export default function Home() {
       {/* Settings Menu */}
       {showSettings && (
         <View style={styles.settingsMenu}>
-          {/* ✅ 新增：只有 partnerCode 存在时显示 Unmatch */}
-          {partnerCode && (
+          {/* ✅ Updated: Show unmatch only if has partner */}
+          {hasPartner && (
             <TouchableOpacity style={styles.dangerBtn} onPress={handleUnmatch}>
               <Text style={styles.dangerText}>💔 Unmatch with Partner</Text>
             </TouchableOpacity>
@@ -138,9 +151,10 @@ export default function Home() {
   );
 }
 
-// 样式保持不变
 const styles = StyleSheet.create({
   container: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#fff' },
+  loadingContainer: { alignItems: 'center', marginBottom: 20 },
+  loadingText: { marginTop: 8, fontSize: 14, color: '#6b7280' },
   profileRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   profileCard: { padding: 16, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginHorizontal: 8 },
   profileText: { fontSize: 16, fontWeight: '600' },

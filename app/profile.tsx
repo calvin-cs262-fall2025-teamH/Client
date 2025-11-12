@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, SafeAreaView, ActivityIndicator } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { router } from 'expo-router';
+import { api } from '@/lib/api';
 
 export default function Profile() {
   const [name, setName] = useState('');
@@ -10,22 +11,75 @@ export default function Profile() {
   const [major, setMajor] = useState('');
   const [year, setYear] = useState('');
   const [hobby, setHobby] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = async () => {
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
     try {
-      // TODO: Call backend to save profile
-      Alert.alert('Success', 'Profile updated!');
-      router.back();
-    } catch (error) {
-      console.error('Save profile error:', error);
-      Alert.alert('Error', 'Failed to save profile');
+      console.log('[Profile] Loading profile...');
+      const response = await api.getProfile();
+      console.log('[Profile] Profile response:', response);
+
+      if (response.success && response.data) {
+        setName(response.data.name || '');
+        // Note: dateOfBirth, major, year, hobby are not in the backend yet
+        // They would need to be added to the users table
+      }
+    } catch (error: any) {
+      console.error('[Profile] Load profile error:', error);
+      Alert.alert('Error', error.message || 'Failed to load profile');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleSave = async () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      console.log('[Profile] Saving profile:', { name });
+      const response = await api.updateProfile(name.trim());
+      console.log('[Profile] Save response:', response);
+
+      if (response.success) {
+        Alert.alert('Success', 'Profile updated!', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      }
+    } catch (error: any) {
+      console.error('[Profile] Save profile error:', error);
+      Alert.alert('Error', error.message || 'Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ThemedView style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B2332" />
+          <ThemedText style={styles.loadingText}>Loading profile...</ThemedText>
+        </ThemedView>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <ScrollView>
-      <ThemedView style={styles.container}>
-        <ThemedText type="title" style={styles.title}>Your Profile</ThemedText>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView>
+        <ThemedView style={styles.container}>
+        <ThemedText type="title" style={styles.title}>
+          {name ? `${name}'s Profile` : 'Your Profile'}
+        </ThemedText>
 
         <ThemedText style={styles.label}>Name</ThemedText>
         <TextInput
@@ -68,19 +122,36 @@ export default function Profile() {
           multiline
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleSave}>
-          <ThemedText style={styles.buttonText}>Save Profile</ThemedText>
+        <TouchableOpacity style={styles.button} onPress={handleSave} disabled={saving}>
+          <ThemedText style={styles.buttonText}>
+            {saving ? 'Saving...' : 'Save Profile'}
+          </ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ThemedText style={styles.backButtonText}>Back</ThemedText>
         </TouchableOpacity>
       </ThemedView>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#6b7280',
+  },
   container: {
     flex: 1,
     padding: 20,
