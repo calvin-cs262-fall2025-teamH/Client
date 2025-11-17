@@ -115,6 +115,8 @@ export interface PrayerItem {
   content: string;
   createdAt: string;
   updatedAt: string;
+  isAnswered: boolean;
+  answeredAt?: string | null;
 }
 
 export interface CreatePrayerRequest {

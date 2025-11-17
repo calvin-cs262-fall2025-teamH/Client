@@ -20,7 +20,7 @@ import type {
 } from "@/types/api";
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.221.201:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://192.168.7.148:4000";
 
 console.log('[api] BASE URL configured as:', BASE);
 
@@ -28,10 +28,18 @@ const TOKEN_KEY = "auth_token";
 
 export async function saveToken(token: string) {
   await SecureStore.setItemAsync(TOKEN_KEY, token);
+  // Verify the token was saved
+  const savedToken = await SecureStore.getItemAsync(TOKEN_KEY);
+  if (!savedToken) {
+    throw new Error('Failed to save authentication token');
+  }
+  console.log('[saveToken] Token saved and verified successfully');
 }
 
 export async function getToken() {
-  return SecureStore.getItemAsync(TOKEN_KEY);
+  const token = await SecureStore.getItemAsync(TOKEN_KEY);
+  console.log('[getToken] Token retrieved:', token ? `${token.substring(0, 20)}...` : 'null');
+  return token;
 }
 
 export async function clearToken() {
@@ -72,8 +80,9 @@ async function http<T>(path: string, options: RequestInit = {}): Promise<ApiResp
 async function authHttp<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const token = await getToken();
   if (!token) {
-    console.error('[authHttp] No token found');
-    throw new Error("No token");
+    console.error('[authHttp] No token found - user may not be logged in');
+    console.error('[authHttp] Path attempted:', path);
+    throw new Error("Authentication required. Please log in again.");
   }
   console.log(`[authHttp] Calling ${path} with method: ${options.method || 'GET'}`);
   console.log(`[authHttp] Full URL: ${BASE}${path}`);
@@ -276,6 +285,12 @@ export const api = {
   async deletePrayer(id: number) {
     return authHttp<void>(`/api/prayers/${id}`, {
       method: "DELETE",
+    });
+  },
+
+  async togglePrayerAnswered(id: number) {
+    return authHttp<PrayerItem>(`/api/prayers/${id}/toggle-answered`, {
+      method: "PUT",
     });
   },
 };

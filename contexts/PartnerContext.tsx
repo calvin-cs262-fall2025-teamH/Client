@@ -66,14 +66,22 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
 
   const generateCode = async (): Promise<string> => {
     try {
+      // Verify we have a token before attempting to generate code
+      const token = await getToken();
+      if (!token) {
+        throw new Error('You must be logged in to generate a pairing code. Please log in and try again.');
+      }
+
+      console.log('[generateCode] Token verified, calling API...');
       const response = await api.generatePairingCode();
       if (response.success && response.data?.code) {
         setMyCode(response.data.code);
+        console.log('[generateCode] Code generated successfully:', response.data.code);
         return response.data.code;
       }
       throw new Error(response.error || 'Failed to generate code');
     } catch (error: any) {
-      console.error('Error generating code:', error);
+      console.error('[generateCode] Error:', error.message);
       throw error;
     }
   };
