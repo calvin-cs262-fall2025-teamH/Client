@@ -68,6 +68,10 @@ export function MemoryDetailScreen() {
     );
   };
 
+  const likeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: likeScale.value }],
+  }));
+
   const pickImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -135,10 +139,6 @@ export function MemoryDetailScreen() {
       setUploading(false);
     }
   };
-
-  const likeAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: likeScale.value }],
-  }));
 
   const handleDelete = () => {
     Alert.alert(
