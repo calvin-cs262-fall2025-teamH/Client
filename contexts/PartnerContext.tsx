@@ -13,7 +13,7 @@ interface PartnerContextType {
   partner: Partner | null;
   myCode: string | null;
   loading: boolean;
-  refreshPartner: () => Promise<void>;
+  refreshPartner: (silent?: boolean) => Promise<void>;
   generateCode: () => Promise<string>;
   connectWithCode: (code: string) => Promise<void>;
   unmatchPartner: () => Promise<void>;
@@ -28,16 +28,16 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
   const [myCode, setMyCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshPartner = async () => {
+  const refreshPartner = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const token = await getToken();
       if (!token) {
         // Not logged in
         setCoupleId(null);
         setHasPartner(false);
         setPartner(null);
-        setLoading(false);
+        if (!silent) setLoading(false);
         return;
       }
 
@@ -47,6 +47,11 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
         setCoupleId(response.data.coupleId || null);
         setHasPartner(response.data.hasPartner || false);
         setPartner(response.data.partner || null);
+
+        // If we found a partner, clear the code
+        if (response.data.hasPartner) {
+          setMyCode(null);
+        }
       } else {
         // No partner yet
         setCoupleId(null);
@@ -60,7 +65,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
       setHasPartner(false);
       setPartner(null);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -123,6 +128,22 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     refreshPartner();
   }, []);
+
+  // Poll for partner connection if we have a code and no partner yet
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (myCode && !hasPartner) {
+      // Poll every 3 seconds
+      intervalId = setInterval(() => {
+        refreshPartner(true);
+      }, 3000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [myCode, hasPartner]);
 
   return (
     <PartnerContext.Provider

@@ -1,7 +1,7 @@
 import { api } from '@/lib/api';
 import { TimelineActivity } from '@/types/api';
-import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useMemo, useState, useCallback } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import {
   ActivityIndicator,
@@ -19,9 +19,11 @@ export function MemoriesTimelineScreen() {
   const [loading, setLoading] = useState(true);
   const [uploadingActivityId, setUploadingActivityId] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadTimeline();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadTimeline();
+    }, [])
+  );
 
   const loadTimeline = async () => {
     try {

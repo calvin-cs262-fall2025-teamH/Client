@@ -1,7 +1,7 @@
 import { api } from '@/lib/api';
 import { TimelineActivity } from '@/types/api';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -26,8 +26,13 @@ export function CollageScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [emptyEmoji, setEmptyEmoji] = useState('💕');
 
+  useFocusEffect(
+    useCallback(() => {
+      loadTimeline();
+    }, [])
+  );
+
   useEffect(() => {
-    loadTimeline();
     setEmptyEmoji(memoryEmojis[Math.floor(Math.random() * memoryEmojis.length)]);
   }, []);
 

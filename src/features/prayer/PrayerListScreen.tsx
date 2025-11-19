@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, ActivityIndicator, SafeAreaView, RefreshControl } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import type { PrayerItem } from '@/types/api';
 
@@ -11,9 +11,11 @@ export function PrayerListScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPrayer, setNewPrayer] = useState({ title: '', content: '' });
 
-  useEffect(() => {
-    loadPrayers();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadPrayers();
+    }, [])
+  );
 
   const loadPrayers = async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
