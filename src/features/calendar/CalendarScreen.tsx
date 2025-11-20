@@ -133,7 +133,12 @@ export function CalendarScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Days Matter</Text>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>Days Matter</Text>
+          </View>
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={() => Alert.alert('Today in History', 'On this day in 1969, Apollo 12 astronauts landed on the Moon.')} style={styles.historyButton}>
               <Text style={styles.historyButtonText}>📜 History</Text>
@@ -435,6 +440,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   headerActions: {
     flexDirection: 'row',
     gap: 8,
@@ -465,6 +474,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  backButton: { padding: 8 },
+  backButtonText: { fontSize: 16, color: '#8B2332' },
   categoryScroll: {
     marginBottom: 20,
     maxHeight: 40,
