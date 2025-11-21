@@ -135,16 +135,17 @@ export const api = {
       id: number;
       email: string;
       name: string | null;
+      emoji: string;
       coupleId: number | null;
       hasPartner: boolean;
-      partner: { id: number; email: string; name: string | null } | null;
+      partner: { id: number; email: string; name: string | null; emoji: string } | null;
     }>("/api/user/profile");
   },
 
-  async updateProfile(name: string) {
-    return authHttp<{ id: number; email: string; name: string }>("/api/user/profile", {
+  async updateProfile(params: { name?: string; emoji?: string }) {
+    return authHttp<{ id: number; email: string; name: string; emoji: string }>("/api/user/profile", {
       method: "PUT",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(params),
     });
   },
 

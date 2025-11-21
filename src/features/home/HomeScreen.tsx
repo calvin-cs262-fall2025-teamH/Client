@@ -1,6 +1,6 @@
-import { router, useFocusEffect } from 'expo-router';
-import { useMemo, useState, useCallback } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { router } from 'expo-router';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { usePartner } from '@/contexts/PartnerContext';
 import { api } from '@/lib/api';
 
@@ -9,6 +9,8 @@ export function HomeScreen() {
   const [selectedEmoji, setSelectedEmoji] = useState('😭');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [partnerEmoji, setPartnerEmoji] = useState('😭');
+  const [refreshing, setRefreshing] = useState(false);
   const { hasPartner, partner, loading, unmatchPartner, refreshPartner } = usePartner();
 
   const loadUserProfile = useCallback(async () => {
@@ -16,18 +18,29 @@ export function HomeScreen() {
       const response = await api.getProfile();
       if (response.success && response.data) {
         setUserName(response.data.name || null);
+        setSelectedEmoji(response.data.emoji || '😭');
+        // Also update partner emoji from profile response
+        if (response.data.partner?.emoji) {
+          setPartnerEmoji(response.data.partner.emoji);
+        }
       }
     } catch (error) {
-      console.error('Failed to load user profile:', error);
+      // Silently handle error
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadUserProfile();
-      refreshPartner(true); // Refresh partner info silently
-    }, [loadUserProfile, refreshPartner])
-  );
+  // Only load once when component mounts
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  // 下拉刷新：同步partner的更改
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadUserProfile();
+    await refreshPartner(true);
+    setRefreshing(false);
+  };
 
   const emojis = [
     '❤️', '💕', '😊', '🥰', '🎉',
@@ -96,7 +109,17 @@ export function HomeScreen() {
   ]), []);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#8B2332']}
+          tintColor="#8B2332"
+        />
+      }
+    >
       <View style={styles.header}>
         <Text style={styles.appName}>CoupleBond</Text>
         <Text style={styles.tagline}>Stay connected with your partner ❤️</Text>
@@ -119,8 +142,9 @@ export function HomeScreen() {
         </TouchableOpacity>
 
         {hasPartner && partner ? (
-          <TouchableOpacity style={styles.profileCard}>
-            <Text style={styles.profileText}>😭 {partner.name || partner.email}</Text>
+          <TouchableOpacity style={[styles.profileCard, styles.partnerCard]}>
+            <Text style={styles.partnerEmoji}>{partnerEmoji}</Text>
+            <Text style={styles.profileText}>{partner.name || partner.email}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.connectCard} onPress={() => router.push('/connect-partner')}>
@@ -137,9 +161,16 @@ export function HomeScreen() {
               <TouchableOpacity
                 key={index}
                 style={styles.emojiButton}
-                onPress={() => {
+                onPress={async () => {
+                  // 本地立即更新UI
                   setSelectedEmoji(emoji);
                   setShowEmojiPicker(false);
+                  // 异步保存到后台
+                  try {
+                    await api.updateProfile({ emoji });
+                  } catch (error) {
+                    // Silently handle error
+                  }
                 }}
               >
                 <Text style={styles.emojiText}>{emoji}</Text>
@@ -257,4 +288,12 @@ const styles = StyleSheet.create({
   emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   emojiButton: { padding: 8, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb' },
   emojiText: { fontSize: 28 },
+  partnerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  partnerEmoji: {
+    fontSize: 32,
+    marginRight: 8,
+  },
 });

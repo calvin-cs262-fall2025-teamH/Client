@@ -44,7 +44,7 @@ export function ProfileScreen() {
     try {
       setSaving(true);
       console.log('[Profile] Saving profile:', { name });
-      const response = await api.updateProfile(name.trim());
+      const response = await api.updateProfile({ name: name.trim() });
       console.log('[Profile] Save response:', response);
 
       if (response.success) {
