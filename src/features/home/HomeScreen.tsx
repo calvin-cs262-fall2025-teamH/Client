@@ -1,13 +1,46 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { usePartner } from '@/contexts/PartnerContext';
+import { api } from '@/lib/api';
 
 export function HomeScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState('😭');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const { hasPartner, partner, loading, unmatchPartner } = usePartner();
+  const [userName, setUserName] = useState<string | null>(null);
+  const [partnerEmoji, setPartnerEmoji] = useState('😭');
+  const [refreshing, setRefreshing] = useState(false);
+  const { hasPartner, partner, loading, unmatchPartner, refreshPartner } = usePartner();
+
+  const loadUserProfile = useCallback(async () => {
+    try {
+      const response = await api.getProfile();
+      if (response.success && response.data) {
+        setUserName(response.data.name || null);
+        setSelectedEmoji(response.data.emoji || '😭');
+        // Also update partner emoji from profile response
+        if (response.data.partner?.emoji) {
+          setPartnerEmoji(response.data.partner.emoji);
+        }
+      }
+    } catch (error) {
+      // Silently handle error
+    }
+  }, []);
+
+  // Only load once when component mounts
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  // 下拉刷新：同步partner的更改
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadUserProfile();
+    await refreshPartner(true);
+    setRefreshing(false);
+  };
 
   const emojis = [
     '❤️', '💕', '😊', '🥰', '🎉',
@@ -76,7 +109,22 @@ export function HomeScreen() {
   ]), []);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#8B2332']}
+          tintColor="#8B2332"
+        />
+      }
+    >
+      <View style={styles.header}>
+        <Text style={styles.appName}>CoupleBond</Text>
+        <Text style={styles.tagline}>Stay connected with your partner ❤️</Text>
+      </View>
+
       {loading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#8B2332" />
@@ -86,7 +134,7 @@ export function HomeScreen() {
 
       <View style={styles.profileRow}>
         <TouchableOpacity style={styles.profileCard} onPress={() => router.push('/profile')}>
-          <Text style={styles.profileText}>Your Profile</Text>
+          <Text style={styles.profileText}>{userName || 'Your Profile'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => setShowEmojiPicker(!showEmojiPicker)}>
@@ -94,8 +142,9 @@ export function HomeScreen() {
         </TouchableOpacity>
 
         {hasPartner && partner ? (
-          <TouchableOpacity style={styles.profileCard}>
-            <Text style={styles.profileText}>😭 {partner.name || partner.email}</Text>
+          <TouchableOpacity style={[styles.profileCard, styles.partnerCard]}>
+            <Text style={styles.partnerEmoji}>{partnerEmoji}</Text>
+            <Text style={styles.profileText}>{partner.name || partner.email}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.connectCard} onPress={() => router.push('/connect-partner')}>
@@ -112,9 +161,16 @@ export function HomeScreen() {
               <TouchableOpacity
                 key={index}
                 style={styles.emojiButton}
-                onPress={() => {
+                onPress={async () => {
+                  // 本地立即更新UI
                   setSelectedEmoji(emoji);
                   setShowEmojiPicker(false);
+                  // 异步保存到后台
+                  try {
+                    await api.updateProfile({ emoji });
+                  } catch (error) {
+                    // Silently handle error
+                  }
                 }}
               >
                 <Text style={styles.emojiText}>{emoji}</Text>
@@ -159,12 +215,44 @@ export function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#fff' },
+  container: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#f8e5e8' },
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+    paddingVertical: 20,
+  },
+  appName: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#8B2332',
+    marginBottom: 8,
+    textShadowColor: 'rgba(139, 35, 50, 0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  tagline: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+    fontStyle: 'italic',
+  },
   loadingContainer: { alignItems: 'center', marginBottom: 20 },
   loadingText: { marginTop: 8, fontSize: 14, color: '#6b7280' },
   profileRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-  profileCard: { padding: 16, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginHorizontal: 8 },
-  profileText: { fontSize: 16, fontWeight: '600' },
+  profileCard: {
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#8B2332',
+    borderRadius: 12,
+    marginHorizontal: 8,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  profileText: { fontSize: 16, fontWeight: '600', color: '#8B2332' },
   connectCard: {
     padding: 16,
     borderWidth: 2,
@@ -200,4 +288,12 @@ const styles = StyleSheet.create({
   emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   emojiButton: { padding: 8, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb' },
   emojiText: { fontSize: 28 },
+  partnerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  partnerEmoji: {
+    fontSize: 32,
+    marginRight: 8,
+  },
 });
