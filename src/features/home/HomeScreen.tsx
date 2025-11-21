@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { usePartner } from '@/contexts/PartnerContext';
@@ -32,6 +32,14 @@ export function HomeScreen() {
   useEffect(() => {
     loadUserProfile();
   }, []);
+
+  // 当页面获得焦点时刷新数据
+  useFocusEffect(
+    useCallback(() => {
+      loadUserProfile();
+      refreshPartner(true);
+    }, [loadUserProfile, refreshPartner])
+  );
 
   // 下拉刷新：同步partner的更改
   const onRefresh = async () => {
