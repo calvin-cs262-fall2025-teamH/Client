@@ -209,7 +209,7 @@ export function PrayerListScreen() {
                   onPress={() => handleTogglePrayer(prayer)}
                 >
                   <Text style={styles.toggleButtonText}>
-                    {prayer.isAnswered ? 'Mark as Unanswered' : 'Mark as Answered'}
+                    {prayer.isAnswered ? 'Mark as Unread' : 'Mark as Read'}
                   </Text>
                 </TouchableOpacity>
               </View>
