@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, SafeAreaView, ActivityIndicator } from 'react-native';
+import { TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, SafeAreaView, ActivityIndicator, View } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { router } from 'expo-router';
@@ -73,6 +73,9 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <ThemedText style={styles.backButtonText}>← Back</ThemedText>
+      </TouchableOpacity>
       <ScrollView>
         <ThemedView style={styles.container}>
           <ThemedText type="title" style={styles.title}>
@@ -187,16 +190,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   backButton: {
-    width: '100%',
-    padding: 14,
-    marginTop: 12,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   backButtonText: {
-    color: '#374151',
     fontSize: 16,
+    color: '#8B2332',
     fontWeight: '600',
   },
 });

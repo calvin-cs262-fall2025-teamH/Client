@@ -1,17 +1,16 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { usePartner } from '@/contexts/PartnerContext';
 import { api } from '@/lib/api';
 
 export function HomeScreen() {
-  const [showSettings, setShowSettings] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState('😭');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [partnerEmoji, setPartnerEmoji] = useState('😭');
   const [refreshing, setRefreshing] = useState(false);
-  const { hasPartner, partner, loading, unmatchPartner, refreshPartner } = usePartner();
+  const { hasPartner, partner, loading, refreshPartner } = usePartner();
 
   const loadUserProfile = useCallback(async () => {
     try {
@@ -34,6 +33,14 @@ export function HomeScreen() {
     loadUserProfile();
   }, []);
 
+  // 当页面获得焦点时刷新数据
+  useFocusEffect(
+    useCallback(() => {
+      loadUserProfile();
+      refreshPartner(true);
+    }, [loadUserProfile, refreshPartner])
+  );
+
   // 下拉刷新：同步partner的更改
   const onRefresh = async () => {
     setRefreshing(true);
@@ -47,46 +54,6 @@ export function HomeScreen() {
     '💔', '😢', '😭', '😞', '🥺',
     '😡', '😤', '😠', '👿', '😩'
   ];
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Account Deleted', 'Your account has been deleted.');
-            router.replace('/');
-          },
-        },
-      ]
-    );
-  };
-
-  const handleUnmatch = async () => {
-    Alert.alert(
-      'Unmatch Partner',
-      'Are you sure you want to unmatch with your partner?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unmatch',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await unmatchPartner();
-              Alert.alert('Success', 'You have been unmatched from your partner.');
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to unmatch');
-            }
-          },
-        },
-      ]
-    );
-  };
 
   const featureCards = useMemo(() => ([
     {
@@ -193,23 +160,6 @@ export function HomeScreen() {
           </TouchableOpacity>
         ))}
       </View>
-
-      <TouchableOpacity style={styles.settingsBtn} onPress={() => setShowSettings(!showSettings)}>
-        <Text style={styles.settingsText}>⚙️ Settings</Text>
-      </TouchableOpacity>
-
-      {showSettings && (
-        <View style={styles.settingsMenu}>
-          {hasPartner && (
-            <TouchableOpacity style={styles.dangerBtn} onPress={handleUnmatch}>
-              <Text style={styles.dangerText}>💔 Unmatch with Partner</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={styles.dangerBtn} onPress={handleDeleteAccount}>
-            <Text style={styles.dangerText}>🗑️ Delete Account</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </ScrollView>
   );
 }
@@ -251,6 +201,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    minWidth: 120,
+    minHeight: 64,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileText: { fontSize: 16, fontWeight: '600', color: '#8B2332' },
   connectCard: {
@@ -278,11 +232,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   featureTitle: { fontSize: 18, fontWeight: '700', color: '#8B2332', textAlign: 'center' },
-  settingsBtn: { marginTop: 32, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#f9fafb' },
-  settingsText: { fontSize: 16, fontWeight: '500' },
-  settingsMenu: { width: '100%', marginTop: 16, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#fff' },
-  dangerBtn: { width: '100%', padding: 12, marginVertical: 6, borderRadius: 8, backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#ef4444', alignItems: 'center' },
-  dangerText: { fontSize: 16, fontWeight: '600', color: '#dc2626' },
   emojiPicker: { width: '100%', padding: 16, marginBottom: 16, backgroundColor: '#f8e5e8', borderRadius: 12, borderWidth: 1, borderColor: '#8B2332' },
   emojiPickerTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
   emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
@@ -291,6 +240,7 @@ const styles = StyleSheet.create({
   partnerCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   partnerEmoji: {
     fontSize: 32,

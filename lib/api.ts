@@ -20,7 +20,7 @@ import type {
 } from "@/types/api";
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.84.98:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://192.168.7.209:4000";
 
 console.log('[api] BASE URL configured as:', BASE);
 
