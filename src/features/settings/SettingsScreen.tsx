@@ -61,9 +61,16 @@ export function SettingsScreen() {
           </TouchableOpacity>
 
           {hasPartner && (
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/partner-info')}>
+              <Text style={styles.menuIcon}>ℹ️</Text>
+              <Text style={styles.menuText}>Partner Info</Text>
+            </TouchableOpacity>
+          )}
+
+          {hasPartner && (
             <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/connect-partner')}>
               <Text style={styles.menuIcon}>💑</Text>
-              <Text style={styles.menuText}>Partner Info</Text>
+              <Text style={styles.menuText}>Start a Relationship</Text>
             </TouchableOpacity>
           )}
         </View>

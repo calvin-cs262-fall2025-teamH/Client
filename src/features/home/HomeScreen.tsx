@@ -201,6 +201,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    minWidth: 120,
+    minHeight: 64,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileText: { fontSize: 16, fontWeight: '600', color: '#8B2332' },
   connectCard: {
@@ -236,6 +240,7 @@ const styles = StyleSheet.create({
   partnerCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   partnerEmoji: {
     fontSize: 32,

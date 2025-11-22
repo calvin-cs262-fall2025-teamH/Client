@@ -65,6 +65,9 @@ export function ConnectPartnerScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <ThemedText style={styles.backButtonText}>← Back</ThemedText>
+      </TouchableOpacity>
       <ThemedText type="title" style={styles.title}>Connect with Partner</ThemedText>
 
       {loading && (
@@ -191,15 +194,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   backButton: {
-    width: '100%',
-    padding: 14,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   backButtonText: {
-    color: '#374151',
     fontSize: 16,
+    color: '#8B2332',
     fontWeight: '600',
   },
   loadingOverlay: {
