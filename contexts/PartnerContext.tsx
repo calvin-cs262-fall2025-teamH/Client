@@ -5,6 +5,7 @@ interface Partner {
   id: number;
   email: string;
   name: string | null;
+  emoji?: string;
 }
 
 interface PartnerContextType {
@@ -44,12 +45,32 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
       const response = await api.getPartner();
 
       if (response.success && response.data) {
-        setCoupleId(response.data.coupleId || null);
-        setHasPartner(response.data.hasPartner || false);
-        setPartner(response.data.partner || null);
+        const newCoupleId = response.data.coupleId || null;
+        const newHasPartner = response.data.hasPartner || false;
+        const newPartner = response.data.partner || null;
+
+        // Only update state if values actually changed
+        if (coupleId !== newCoupleId) setCoupleId(newCoupleId);
+        if (hasPartner !== newHasPartner) setHasPartner(newHasPartner);
+
+        // Only update partner if it actually changed (compare by id and emoji)
+        const partnerChanged = !partner || !newPartner ||
+          partner.id !== newPartner.id ||
+          partner.name !== newPartner.name ||
+          partner.email !== newPartner.email ||
+          partner.emoji !== newPartner.emoji;
+
+        if (partnerChanged) {
+          console.log('[PartnerContext] Partner changed, updating:', { old: partner, new: newPartner });
+          setPartner(newPartner);
+        }
 
         // If we found a partner, clear the code
-        if (response.data.hasPartner) {
+        if (newHasPartner && myCode) {
+          console.log('[PartnerContext] Partner found, clearing code');
+          setMyCode(null);
+        } else if (newHasPartner) {
+          // Make absolutely sure code is null when we have a partner
           setMyCode(null);
         }
       } else {
@@ -126,22 +147,33 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
 
   // Load partner info on mount
   useEffect(() => {
+    console.log('[PartnerContext] Component mounted, loading partner info');
     refreshPartner();
   }, []);
 
-  // Poll for partner connection if we have a code and no partner yet
+  // Poll for partner connection ONLY if we have a code and no partner yet
+  // This is for waiting for the other person to connect using your code
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
 
+    console.log('[PartnerContext] Polling check - myCode:', myCode, 'hasPartner:', hasPartner);
+
     if (myCode && !hasPartner) {
-      // Poll every 3 seconds
+      console.log('[PartnerContext] Starting polling for partner connection');
+      // Poll every 3 seconds only when waiting for connection
       intervalId = setInterval(() => {
+        console.log('[PartnerContext] Polling...');
         refreshPartner(true);
       }, 3000);
+    } else {
+      console.log('[PartnerContext] No polling needed');
     }
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (intervalId) {
+        console.log('[PartnerContext] Stopping polling');
+        clearInterval(intervalId);
+      }
     };
   }, [myCode, hasPartner]);
 
