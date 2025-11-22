@@ -19,46 +19,60 @@ export function ProfileScreen() {
   }, []);
 
   const loadProfile = async () => {
-    try {
-      console.log('[Profile] Loading profile...');
-      const response = await api.getProfile();
-      console.log('[Profile] Profile response:', response);
+  try {
+    console.log('[Profile] Loading profile...');
+    const response = await api.getProfile();
+    console.log('[Profile] Profile response:', response);
 
-      if (response.success && response.data) {
-        setName(response.data.name || '');
-      }
-    } catch (error: any) {
-      console.error('[Profile] Load profile error:', error);
-      Alert.alert('Error', error.message || 'Failed to load profile');
-    } finally {
-      setLoading(false);
+    if (response.success && response.data) {
+      setName(response.data.name || '');
+      setDateOfBirth(response.data.dateOfBirth || '');
+      setMajor(response.data.major || '');
+      setYear(response.data.year || '');
+      setHobby(response.data.hobby || '');
     }
-  };
+  } catch (error: any) {
+    console.error('[Profile] Load profile error:', error);
+    Alert.alert('Error', error.message || 'Failed to load profile');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      Alert.alert('Error', 'Please enter your name');
-      return;
-    }
+  if (!name.trim()) {
+    Alert.alert('Error', 'Please enter your name');
+    return;
+  }
 
-    try {
-      setSaving(true);
-      console.log('[Profile] Saving profile:', { name });
-      const response = await api.updateProfile(name.trim());
-      console.log('[Profile] Save response:', response);
+  try {
+    setSaving(true);
+    console.log('[Profile] Saving profile:', { name, dateOfBirth, major, year, hobby });
 
-      if (response.success) {
-        Alert.alert('Success', 'Profile updated!', [
-          { text: 'OK', onPress: () => router.back() }
-        ]);
-      }
-    } catch (error: any) {
-      console.error('[Profile] Save profile error:', error);
-      Alert.alert('Error', error.message || 'Failed to save profile');
-    } finally {
-      setSaving(false);
+    const response = await api.updateProfile({
+      name: name.trim(),
+      dateOfBirth,
+      major,
+      year,
+      hobby
+    });
+
+    console.log('[Profile] Save response:', response);
+
+    if (response.success) {
+      Alert.alert('Success', 'Profile updated!', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
     }
-  };
+  } catch (error: any) {
+    console.error('[Profile] Save profile error:', error);
+    Alert.alert('Error', error.message || 'Failed to save profile');
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   if (loading) {
     return (

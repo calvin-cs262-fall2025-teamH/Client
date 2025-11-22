@@ -77,6 +77,8 @@ async function http<T>(path: string, options: RequestInit = {}): Promise<ApiResp
   }
 }
 
+/* The `authHttp` function is a helper function used to make authenticated HTTP requests to the API.
+Here's a breakdown of what it does: */
 async function authHttp<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const token = await getToken();
   if (!token) {
@@ -131,22 +133,33 @@ export const api = {
 
   // ============= User/Partner APIs =============
   async getProfile() {
-    return authHttp<{
-      id: number;
-      email: string;
-      name: string | null;
-      coupleId: number | null;
-      hasPartner: boolean;
-      partner: { id: number; email: string; name: string | null } | null;
-    }>("/api/user/profile");
-  },
+  return authHttp<{
+    id: number;
+    email: string;
+    name: string | null;
+    coupleId: number | null;
+    hasPartner: boolean;
+    partner: { id: number; email: string; name: string | null } | null;
+    createdAt: string;
+    dateOfBirth: string | null;
+    major: string | null;
+    year: string | null;
+    hobby: string | null;
+  }>("/api/user/profile");
+},
 
-  async updateProfile(name: string) {
-    return authHttp<{ id: number; email: string; name: string }>("/api/user/profile", {
-      method: "PUT",
-      body: JSON.stringify({ name }),
-    });
-  },
+  async updateProfile(data: {
+  name?: string;
+  dateOfBirth?: string;
+  major?: string;
+  year?: string;
+  hobby?: string;
+}) {
+  return authHttp<any>("/api/user/profile", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+},
 
   async generatePairingCode() {
     return authHttp<{ code: string; expiresAt: string }>("/api/user/partner/generate-code", {
