@@ -45,6 +45,7 @@ export function LoginScreen() {
       />
 
       <TextInput
+        style={styles.input}
         placeholder="Password"
         value={password}
         secureTextEntry

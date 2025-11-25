@@ -9,7 +9,10 @@ export function PrayerListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [newPrayer, setNewPrayer] = useState({ title: '', content: '' });
+  const [editingPrayer, setEditingPrayer] = useState<PrayerItem | null>(null);
+  const [editForm, setEditForm] = useState({ title: '', content: '' });
 
   useFocusEffect(
     useCallback(() => {
@@ -81,6 +84,42 @@ export function PrayerListScreen() {
     }
   };
 
+  const handleEditPrayer = (prayer: PrayerItem) => {
+    setEditingPrayer(prayer);
+    setEditForm({ title: prayer.title, content: prayer.content });
+    setShowEditModal(true);
+  };
+
+  const handleUpdatePrayer = async () => {
+    if (!editingPrayer) return;
+
+    if (!editForm.title.trim() || !editForm.content.trim()) {
+      Alert.alert('Error', 'Please enter both title and content');
+      return;
+    }
+
+    try {
+      console.log('[PrayerList] Updating prayer:', editingPrayer.id, editForm);
+      const response = await api.updatePrayer(editingPrayer.id, {
+        title: editForm.title.trim(),
+        content: editForm.content.trim(),
+      });
+      console.log('[PrayerList] Update prayer response:', response);
+
+      if (response.data) {
+        const updated = response.data;
+        setPrayers((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        setShowEditModal(false);
+        setEditingPrayer(null);
+        setEditForm({ title: '', content: '' });
+        Alert.alert('Success', 'Prayer updated successfully');
+      }
+    } catch (error: any) {
+      console.error('[PrayerList] Update prayer error:', error);
+      Alert.alert('Error', error.message || 'Failed to update prayer');
+    }
+  };
+
   const handleDeletePrayer = (id: number) => {
     Alert.alert(
       'Delete Prayer',
@@ -147,9 +186,14 @@ export function PrayerListScreen() {
               <View key={prayer.id} style={styles.prayerCard}>
                 <View style={styles.prayerHeader}>
                   <Text style={styles.prayerTitle}>{prayer.title}</Text>
-                  <TouchableOpacity onPress={() => handleDeletePrayer(prayer.id)} style={styles.deleteButton}>
-                    <Text style={styles.deleteButtonText}>🗑️</Text>
-                  </TouchableOpacity>
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity onPress={() => handleEditPrayer(prayer)} style={styles.editButton}>
+                      <Text style={styles.editButtonText}>✏️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDeletePrayer(prayer.id)} style={styles.deleteButton}>
+                      <Text style={styles.deleteButtonText}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 <Text style={styles.prayerContent}>{prayer.content}</Text>
                 <View style={styles.prayerFooter}>
@@ -165,7 +209,7 @@ export function PrayerListScreen() {
                   onPress={() => handleTogglePrayer(prayer)}
                 >
                   <Text style={styles.toggleButtonText}>
-                    {prayer.isAnswered ? 'Mark as Unanswered' : 'Mark as Answered'}
+                    {prayer.isAnswered ? 'Mark as Unread' : 'Mark as Read'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -210,6 +254,45 @@ export function PrayerListScreen() {
             </ScrollView>
           </View>
         </Modal>
+
+        <Modal visible={showEditModal} animationType="slide" transparent onRequestClose={() => setShowEditModal(false)}>
+          <View style={styles.modalOverlay}>
+            <ScrollView contentContainerStyle={styles.modalScrollContent} keyboardShouldPersistTaps="handled">
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Edit Prayer</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Prayer Title"
+                  value={editForm.title}
+                  onChangeText={(text) => setEditForm({ ...editForm, title: text })}
+                />
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Prayer Content"
+                  value={editForm.content}
+                  onChangeText={(text) => setEditForm({ ...editForm, content: text })}
+                  multiline
+                  numberOfLines={4}
+                />
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => {
+                      setEditForm({ title: '', content: '' });
+                      setEditingPrayer(null);
+                      setShowEditModal(false);
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleUpdatePrayer}>
+                    <Text style={styles.saveButtonText}>Update</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -235,6 +318,9 @@ const styles = StyleSheet.create({
   prayerCard: { marginBottom: 16, padding: 16, backgroundColor: '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' },
   prayerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   prayerTitle: { fontSize: 18, fontWeight: '600', flex: 1 },
+  actionButtons: { flexDirection: 'row', gap: 8 },
+  editButton: { padding: 4 },
+  editButtonText: { fontSize: 20 },
   deleteButton: { padding: 4 },
   deleteButtonText: { fontSize: 20 },
   prayerContent: { fontSize: 14, color: '#374151', marginBottom: 8, lineHeight: 20 },
