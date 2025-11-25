@@ -6,7 +6,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAfCvnS4GD0rV05QTMpDFgxMjla9B5YJxk",
   authDomain: "couple-bond.firebaseapp.com",
   projectId: "couple-bond",
-  storageBucket: "couple-bond.appspot.com",
+  storageBucket: "couple-bond-8c4d0.firebasestorage.app",
   messagingSenderId: "393171926065",
   appId: "1:393171926065:web:69ef733003b8c2e6556910",
   measurementId: "G-8PKJ4NJSVL"

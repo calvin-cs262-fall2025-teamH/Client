@@ -19,8 +19,6 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring, withSequence } 
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/firebaseConfig';
 
 // Theme Colors
 const THEME = {
@@ -95,31 +93,75 @@ export function MemoryDetailScreen() {
     }
   };
 
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant camera permissions to take photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        await uploadImage(result.assets[0].uri);
+      }
+    } catch (error: any) {
+      console.error('Take photo error:', error);
+      Alert.alert('Error', `Failed to take photo: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      'Add Photo',
+      'Choose an option',
+      [
+        { text: 'Take Photo', onPress: takePhoto },
+        { text: 'Choose from Library', onPress: pickImage },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
   const uploadImage = async (uri: string) => {
     if (!id) return;
     try {
       setUploading(true);
       console.log('Starting upload for:', uri);
 
-      // 1. Read file as Base64 (Most reliable for Expo + Firebase JS SDK)
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: 'base64',
-      });
-
+      // Firebase Storage REST API configuration
+      const FIREBASE_STORAGE_BUCKET = 'couple-bond-8c4d0.firebasestorage.app';
       const filename = `memories/${id}/${Date.now()}.jpg`;
-      const storageRef = ref(storage, filename);
+      const encodedFilename = encodeURIComponent(filename);
 
-      // 2. Upload to Firebase
+      // Upload using Expo FileSystem (bypasses all Blob issues)
+      const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o/${encodedFilename}`;
+
       try {
-        await uploadString(storageRef, base64, 'base64', {
-          contentType: 'image/jpeg',
-        });
+        const uploadResult = await FileSystem.uploadAsync(uploadUrl, uri, {
+          httpMethod: 'POST',
+          uploadType: 0, // 0 = BINARY_CONTENT
+          headers: {
+            'Content-Type': 'image/jpeg',
+          },
+        } as any);
+
+        if (uploadResult.status !== 200) {
+          throw new Error(`Upload failed with status ${uploadResult.status}`);
+        }
+
+        console.log('Upload successful:', uploadResult.body);
       } catch (e: any) {
         console.error('Firebase raw error:', e);
-        throw new Error(`Firebase Upload Failed: ${e.message} (${e.code})`);
+        throw new Error(`Firebase Upload Failed: ${e.message}`);
       }
 
-      const downloadURL = await getDownloadURL(storageRef);
+      // Get the download URL
+      const downloadURL = `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o/${encodedFilename}?alt=media`;
 
       // 3. Save to Backend
       try {
@@ -259,7 +301,7 @@ export function MemoryDetailScreen() {
 
       <TouchableOpacity
         style={styles.fab}
-        onPress={pickImage}
+        onPress={showImageOptions}
         disabled={uploading}
       >
         {uploading ? (
