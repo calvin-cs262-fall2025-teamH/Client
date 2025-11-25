@@ -1,30 +1,133 @@
 import { api } from '@/lib/api';
 import { TimelineActivity } from '@/types/api';
 import { router, useFocusEffect } from 'expo-router';
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   SafeAreaView,
 } from 'react-native';
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-const memoryEmojis = [
-  '❤️', '💔', '😊', '😢', '🎉', '💑', '🌹', '💖', '😭', '🥰',
-  '😡', '😤', '😠', '🤬', '😞', '😔', '😩', '😫', '🥺', '😖', '💢', '👿'
-];
+// Theme Colors
+const THEME = {
+  background: '#FFF9F9', // Creamy
+  primary: '#E89898',    // Soft Pink
+  secondary: '#D4AF37',  // Gold
+  text: '#4A4A4A',       // Dark Grey
+  card: '#FFFFFF',
+  shadow: '#E8D5D5',
+};
+
+const CollageCard = ({ item, index }: { item: TimelineActivity; index: number }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1);
+  };
+
+  const renderCollage = () => {
+    const photos = item.photos || [];
+    if (photos.length === 0) return null;
+
+    if (photos.length === 1) {
+      return (
+        <Image source={{ uri: photos[0].photoUrl }} style={styles.singlePhoto} />
+      );
+    }
+
+    if (photos.length === 2) {
+      return (
+        <View style={styles.row}>
+          <Image source={{ uri: photos[0].photoUrl }} style={styles.halfPhoto} />
+          <Image source={{ uri: photos[1].photoUrl }} style={styles.halfPhoto} />
+        </View>
+      );
+    }
+
+    if (photos.length >= 3) {
+      return (
+        <View style={styles.collageContainer}>
+          <Image source={{ uri: photos[0].photoUrl }} style={styles.mainPhoto} />
+          <View style={styles.sidePhotos}>
+            <Image source={{ uri: photos[1].photoUrl }} style={styles.quarterPhoto} />
+            <Image source={{ uri: photos[2].photoUrl }} style={styles.quarterPhoto} />
+            {photos.length > 3 && (
+              <View style={styles.moreOverlay}>
+                <Text style={styles.moreText}>+{photos.length - 3}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      );
+    }
+  };
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(index * 100).springify()}
+      style={[styles.cardContainer, animatedStyle]}
+    >
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={() => router.push(`/memory-detail?id=${item.id}`)}
+        style={styles.card}
+      >
+        <View style={styles.headerRow}>
+          <View style={styles.dateContainer}>
+            <Text style={styles.dayText}>{new Date(item.date).getDate()}</Text>
+            <View style={styles.monthYearContainer}>
+              <Text style={styles.monthText}>
+                {new Date(item.date).toLocaleString('default', { month: 'short' }).toUpperCase()}
+              </Text>
+              <Text style={styles.yearText}>{new Date(item.date).getFullYear()}</Text>
+            </View>
+          </View>
+          {item.location && (
+            <View style={styles.locationBadge}>
+              <Text style={styles.locationText}>📍 {item.location}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.collageWrapper}>
+          {renderCollage()}
+        </View>
+
+        <View style={styles.infoContainer}>
+          <Text style={styles.title}>{item.title}</Text>
+          {item.description && (
+            <Text style={styles.description} numberOfLines={1}>
+              {item.description}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 export function CollageScreen() {
   const [activities, setActivities] = useState<TimelineActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [emptyEmoji, setEmptyEmoji] = useState('💕');
 
   useFocusEffect(
     useCallback(() => {
@@ -32,333 +135,251 @@ export function CollageScreen() {
     }, [])
   );
 
-  useEffect(() => {
-    setEmptyEmoji(memoryEmojis[Math.floor(Math.random() * memoryEmojis.length)]);
-  }, []);
-
   const loadTimeline = async () => {
     try {
-      console.log('[Collage] Loading timeline...');
-      setLoading(true);
       const response = await api.getTimeline();
-      console.log('[Collage] Timeline response:', response);
       setActivities(response.data || []);
     } catch (error: any) {
-      console.error('[Collage] Timeline error:', error);
       Alert.alert('Error', error.message || 'Failed to load timeline');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const onRefresh = async () => {
+  const onRefresh = () => {
     setRefreshing(true);
-    await loadTimeline();
-    setRefreshing(false);
+    loadTimeline();
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  if (loading) {
+  if (loading && !refreshing) {
     return (
-      <SafeAreaView style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#8B2332" />
-        <Text style={styles.loadingText}>Loading memories...</Text>
-        <TouchableOpacity
-          style={styles.debugButton}
-          onPress={() => {
-            Alert.alert(
-              'Debug Info',
-              'Check the console logs to see what\'s happening.\n\nIf stuck here, you likely need to pair with a partner first.',
-              [
-                { text: 'OK' },
-                { text: 'Go to Connect Partner', onPress: () => router.push('/connect-partner') }
-              ]
-            );
-          }}
-        >
-          <Text style={styles.debugButtonText}>Taking too long? Tap here</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={THEME.primary} />
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Our Story</Text>
+        <Text style={styles.headerSubtitle}>Every moment counts 💗</Text>
+      </View>
+
+      <FlatList
+        data={activities}
+        renderItem={({ item, index }) => <CollageCard item={item} index={index} />}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B2332" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={THEME.primary} />
         }
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Our Memories</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => router.push('/create-memory')}
-          >
-            <Text style={styles.addButtonText}>+ Add Memory</Text>
-          </TouchableOpacity>
-        </View>
-
-        {activities.length === 0 ? (
+        ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>{emptyEmoji}</Text>
+            <Text style={styles.emptyEmoji}>📸</Text>
             <Text style={styles.emptyText}>No memories yet</Text>
-            <Text style={styles.emptySubtext}>
-              Every relationship has ups and downs - capture them all! 💕😢🎉
-            </Text>
-            <TouchableOpacity
-              style={styles.createFirstButton}
-              onPress={() => router.push('/create-memory')}
-            >
-              <Text style={styles.createFirstButtonText}>Create First Memory</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptySubtext}>Let&apos;s create our first memory!</Text>
           </View>
-        ) : (
-          activities.map((activity) => (
-            <TouchableOpacity
-              key={activity.id}
-              style={styles.timelineCard}
-              onPress={() => router.push(`/memory-detail?id=${activity.id}`)}
-            >
-              <View style={styles.dateBadge}>
-                <Text style={styles.dateText}>{formatDate(activity.date)}</Text>
-              </View>
+        }
+      />
 
-              <Text style={styles.activityTitle}>{activity.title}</Text>
-              {activity.description && (
-                <Text style={styles.activityDescription} numberOfLines={2}>
-                  {activity.description}
-                </Text>
-              )}
-
-              {activity.location && (
-                <View style={styles.locationRow}>
-                  <Text style={styles.locationIcon}>📍</Text>
-                  <Text style={styles.locationText}>{activity.location}</Text>
-                </View>
-              )}
-
-              {activity.photos.length > 0 && (
-                <View style={styles.photoGrid}>
-                  {activity.photos.slice(0, 3).map((photo) => (
-                    <View key={photo.id} style={styles.photoWrapper}>
-                      <Image
-                        source={{ uri: photo.photoUrl }}
-                        style={styles.photo}
-                        defaultSource={require('@/assets/images/react-logo.png')}
-                      />
-                    </View>
-                  ))}
-                  {activity.photos.length > 3 && (
-                    <View style={styles.morePhotosOverlay}>
-                      <Text style={styles.morePhotosText}>
-                        +{activity.photos.length - 3}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              )}
-
-              <Text style={styles.viewDetails}>View Full Memory →</Text>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/create-memory')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.fabIcon}>➕</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f8e5e8',
-  },
   container: {
     flex: 1,
-    backgroundColor: '#f8e5e8',
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
+    backgroundColor: THEME.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8e5e8',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
+    backgroundColor: THEME.background,
   },
   header: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: 'transparent',
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: THEME.text,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 4,
+    letterSpacing: 1,
+  },
+  listContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  cardContainer: {
     marginBottom: 24,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#8B2332',
-    marginBottom: 16,
-  },
-  addButton: {
-    backgroundColor: '#8B2332',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    alignSelf: 'flex-start',
-    shadowColor: '#8B2332',
-    shadowOffset: { width: 0, height: 4 },
+  card: {
+    backgroundColor: THEME.card,
+    borderRadius: 24,
+    padding: 16,
+    shadowColor: THEME.shadow,
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 12,
     elevation: 5,
   },
-  addButtonText: {
-    color: '#FFF',
-    fontSize: 16,
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dayText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: THEME.primary,
+    marginRight: 8,
+  },
+  monthYearContainer: {
+    justifyContent: 'center',
+  },
+  monthText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#999',
+  },
+  yearText: {
+    fontSize: 12,
+    color: '#CCC',
+  },
+  locationBadge: {
+    backgroundColor: '#FFF0F0',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  locationText: {
+    fontSize: 12,
+    color: THEME.primary,
     fontWeight: '600',
+  },
+  collageWrapper: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    height: 250,
+    backgroundColor: '#F5F5F5',
+  },
+  singlePhoto: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  row: {
+    flexDirection: 'row',
+    height: '100%',
+  },
+  halfPhoto: {
+    flex: 1,
+    height: '100%',
+    marginRight: 2,
+  },
+  collageContainer: {
+    flexDirection: 'row',
+    height: '100%',
+  },
+  mainPhoto: {
+    flex: 2,
+    height: '100%',
+    marginRight: 2,
+  },
+  sidePhotos: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'space-between',
+  },
+  quarterPhoto: {
+    width: '100%',
+    height: '49.5%',
+  },
+  moreOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: '100%',
+    height: '49.5%',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moreText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  infoContainer: {
+    marginTop: 12,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: THEME.text,
+    marginBottom: 4,
+  },
+  description: {
+    fontSize: 14,
+    color: '#888',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: THEME.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabIcon: {
+    fontSize: 24,
+    color: '#FFF',
   },
   emptyContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
+    marginTop: 100,
   },
-  emptyIcon: {
+  emptyEmoji: {
     fontSize: 64,
     marginBottom: 16,
   },
   emptyText: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  createFirstButton: {
-    backgroundColor: '#8B2332',
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 25,
-  },
-  createFirstButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  timelineCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: '#8B2332',
-  },
-  dateBadge: {
-    backgroundColor: '#f8e5e8',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-  },
-  dateText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8B2332',
-  },
-  activityTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  activityDescription: {
-    fontSize: 15,
-    color: '#666',
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  locationIcon: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#888',
-  },
-  photoGrid: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  photoWrapper: {
-    flex: 1,
-    aspectRatio: 1,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#F0F0F0',
-  },
-  photo: {
-    width: '100%',
-    height: '100%',
-  },
-  morePhotosOverlay: {
-    position: 'absolute',
-    right: 8,
-    top: 0,
-    bottom: 0,
-    width: '30%',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  morePhotosText: {
-    color: '#FFF',
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#CCC',
   },
-  viewDetails: {
+  emptySubtext: {
     fontSize: 14,
-    color: '#8B2332',
-    fontWeight: '600',
-    textAlign: 'right',
-  },
-  debugButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#f8e5e8',
-    borderRadius: 8,
-  },
-  debugButtonText: {
-    fontSize: 12,
-    color: '#8B2332',
-    fontWeight: '600',
+    color: '#DDD',
+    marginTop: 8,
   },
 });

@@ -40,7 +40,13 @@
         }
       ],
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you add memories to your timeline."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
