@@ -1,661 +1,959 @@
-import { api } from '@/lib/api';
-import { Anniversary, CalendarEvent } from '@/types/api';
-import { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
   View,
+  Text,
+  StyleSheet,
   TouchableOpacity,
+  ScrollView,
   Modal,
   TextInput,
-  SafeAreaView,
+  Alert,
+  RefreshControl,
+  Platform,
+  Dimensions
 } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { api } from '@/lib/api';
 
-type Category = 'All' | 'Anniversary' | 'Work' | 'Life' | 'Other';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const DAY_WIDTH = (SCREEN_WIDTH - 48) / 7;
 
-export function CalendarScreen() {
+interface CalendarEvent {
+  id: number;
+  title: string;
+  description: string | null;
+  date: string;
+  time: string | null;
+  isAllDay: boolean;
+  eventType: string;
+  addedBy: number;
+  addedByName: string;
+  location?: string;
+}
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const CalendarScreen = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [anniversaries, setAnniversaries] = useState<Anniversary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<Category>('All');
-  const [showCalculator, setShowCalculator] = useState(false);
-  const [calcStartDate, setCalcStartDate] = useState('');
-  const [calcEndDate, setCalcEndDate] = useState('');
-  const [calcResult, setCalcResult] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [pinnedEvents, setPinnedEvents] = useState<number[]>([]);
+  // Modal states
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [showEventListModal, setShowEventListModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadCalendarData();
-    }, [])
-  );
+  // Form state
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [isAllDay, setIsAllDay] = useState(true);
+  const [eventType, setEventType] = useState('other');
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
-  const loadCalendarData = async () => {
+  // Relationship days
+  const [daysTogether, setDaysTogether] = useState<number | null>(null);
+
+  const eventTypes = [
+    { value: 'anniversary', label: 'Anniversary', icon: '💝', color: '#ff6b9d' },
+    { value: 'date', label: 'Date', icon: '💕', color: '#ff9ecd' },
+    { value: 'work', label: 'Work', icon: '💼', color: '#5c9eff' },
+    { value: 'life', label: 'Life', icon: '🌟', color: '#ffb84d' },
+    { value: 'important', label: 'Important', icon: '⭐', color: '#ff5252' },
+    { value: 'other', label: 'Other', icon: '📅', color: '#9e9e9e' }
+  ];
+
+  useEffect(() => {
+    fetchEvents();
+    fetchAnniversaries();
+  }, []);
+
+  const fetchEvents = async () => {
     try {
-      setLoading(true);
-      const [eventsResponse, anniversariesResponse] = await Promise.all([
-        api.getUpcomingEvents(),
-        api.getAnniversaries(),
-      ]);
-      setEvents(eventsResponse.data || []);
-      setAnniversaries(anniversariesResponse.data || null);
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load calendar data');
-    } finally {
-      setLoading(false);
+      const response = await api.getCalendarEvents();
+      if (response.success && response.data) {
+        const formattedEvents = response.data.map((e: any) => ({
+          id: e.id,
+          title: e.title,
+          description: e.description,
+          date: e.event_date || e.date,
+          time: e.event_time || e.time,
+          isAllDay: e.is_all_day ?? e.isAllDay,
+          eventType: e.event_type || e.eventType || 'other',
+          addedBy: e.added_by_user_id || e.addedBy,
+          addedByName: e.added_by_name || e.addedByName || '',
+          location: e.location
+        }));
+        setEvents(formattedEvents);
+      }
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
     }
   };
 
-  const togglePin = (id: number) => {
-    setPinnedEvents(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    );
+  const fetchAnniversaries = async () => {
+    try {
+      const response = await api.getAnniversaries();
+      if (response.success && response.data) {
+        setDaysTogether(response.data.daysTogether || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch anniversaries:', error);
+    }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchEvents();
+    await fetchAnniversaries();
+    setRefreshing(false);
+  }, []);
+
+  // Calendar logic
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
   };
 
-  const formatFullDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    return new Date(year, month, 1).getDay();
   };
 
-  const getDaysUntil = (dateString: string) => {
-    const targetDate = new Date(dateString);
-    const today = new Date();
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDay = getFirstDayOfMonth(year, month);
+    const days: (number | null)[] = [];
 
-    // Reset time components to compare dates only
-    targetDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
+    // Add empty slots for days before the first day
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null);
+    }
 
-    const diff = targetDate.getTime() - today.getTime();
-    const days = Math.round(diff / (1000 * 60 * 60 * 24));
+    // Add days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i);
+    }
+
     return days;
   };
 
-  const calculateDateDiff = () => {
-    if (!calcStartDate || !calcEndDate) {
-      Alert.alert('Error', 'Please enter both dates (YYYY-MM-DD)');
-      return;
-    }
-    const start = new Date(calcStartDate);
-    const end = new Date(calcEndDate);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      Alert.alert('Error', 'Invalid date format. Use YYYY-MM-DD');
-      return;
-    }
-    const diff = Math.abs(end.getTime() - start.getTime());
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    setCalcResult(days);
+  const goToPrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
 
-  const filteredEvents = events
-    .filter(event => {
-      if (selectedCategory === 'All') return true;
-      return true;
-    })
-    .sort((a, b) => {
-      // Sort by pinned first
-      const aPinned = pinnedEvents.includes(a.id);
-      const bPinned = pinnedEvents.includes(b.id);
-      if (aPinned && !bPinned) return -1;
-      if (!aPinned && bPinned) return 1;
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
 
-      // Then by date
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
 
-  if (loading) {
+  const formatDateString = (date: Date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  const getEventsForDate = (day: number) => {
+    const dateStr = formatDateString(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+    return events.filter(e => e.date.split('T')[0] === dateStr);
+  };
+
+  const isToday = (day: number) => {
+    const today = new Date();
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#8B2332" />
-        <Text style={styles.loadingText}>Loading calendar...</Text>
-      </View>
+      day === today.getDate() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear()
     );
-  }
+  };
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Text style={styles.backButtonText}>← Back</Text>
-            </TouchableOpacity>
-            <Text style={styles.title}>Days Matter</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity onPress={() => Alert.alert('Today in History', 'On this day in 1969, Apollo 12 astronauts landed on the Moon.')} style={styles.historyButton}>
-              <Text style={styles.historyButtonText}>📜 History</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowCalculator(true)} style={styles.calcButton}>
-              <Text style={styles.calcButtonText}>🔢 Calc</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+  const handleDayPress = (day: number) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    setSelectedDate(date);
 
-        {/* Categories */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-          {(['All', 'Anniversary', 'Work', 'Life', 'Other'] as Category[]).map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.categoryChip, selectedCategory === cat && styles.categoryChipActive]}
-              onPress={() => setSelectedCategory(cat)}
-            >
-              <Text style={[styles.categoryText, selectedCategory === cat && styles.categoryTextActive]}>
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+    const dayEvents = getEventsForDate(day);
+    if (dayEvents.length > 0) {
+      setShowEventListModal(true);
+    } else {
+      openCreateEventModal(date);
+    }
+  };
 
-        {anniversaries && (
-          <View style={styles.anniversariesSection}>
-            <View style={styles.daysMatterCard}>
-              <View style={styles.daysMatterHeader}>
-                <Text style={styles.daysMatterLabel}>We&apos;ve been together for</Text>
-                <Text style={styles.daysMatterIcon}>❤️</Text>
-              </View>
+  const openCreateEventModal = (date?: Date) => {
+    setEditingEvent(null);
+    setTitle('');
+    setDescription('');
+    setLocation('');
+    setSelectedTime(new Date());
+    setIsAllDay(true);
+    setEventType('other');
+    if (date) {
+      setSelectedDate(date);
+    }
+    setShowEventModal(true);
+    setShowEventListModal(false);
+  };
 
-              <View style={styles.daysMatterCountContainer}>
-                <Text style={styles.daysMatterNumber}>{anniversaries.daysTogether}</Text>
-                <Text style={styles.daysMatterUnit}>Days</Text>
-              </View>
+  const openEditEventModal = (event: CalendarEvent) => {
+    setEditingEvent(event);
+    setTitle(event.title);
+    setDescription(event.description || '');
+    setLocation(event.location || '');
+    if (event.time) {
+      const [hours, minutes] = event.time.split(':');
+      const time = new Date();
+      time.setHours(parseInt(hours), parseInt(minutes));
+      setSelectedTime(time);
+    }
+    setIsAllDay(event.isAllDay);
+    setEventType(event.eventType);
+    setSelectedDate(new Date(event.date));
+    setShowEventModal(true);
+    setShowEventListModal(false);
+  };
 
-              <View style={styles.daysMatterFooter}>
-                <Text style={styles.daysMatterDate}>Since {formatFullDate(anniversaries.startDate)}</Text>
-              </View>
-            </View>
+  const handleSaveEvent = async () => {
+    if (!title.trim()) {
+      Alert.alert('Error', 'Please enter an event title');
+      return;
+    }
+
+    if (!selectedDate) {
+      Alert.alert('Error', 'Please select a date');
+      return;
+    }
+
+    try {
+      const eventData = {
+        title: title.trim(),
+        description: description.trim() || null,
+        date: formatDateString(selectedDate),
+        time: isAllDay ? null : selectedTime.toTimeString().split(' ')[0],
+        isAllDay,
+        eventType,
+        location: location.trim() || null
+      };
+
+      let response;
+      if (editingEvent) {
+        response = await api.updateCalendarEvent(editingEvent.id, eventData);
+      } else {
+        response = await api.createCalendarEvent(eventData);
+      }
+
+      if (response.success) {
+        setShowEventModal(false);
+        fetchEvents();
+        Alert.alert('Success', editingEvent ? 'Event updated!' : 'Event created!');
+      } else {
+        Alert.alert('Error', 'Failed to save event');
+      }
+    } catch (error) {
+      console.error('Failed to save event:', error);
+      Alert.alert('Error', 'Failed to save event. Please try again.');
+    }
+  };
+
+  const handleDeleteEvent = (event: CalendarEvent) => {
+    Alert.alert(
+      'Delete Event',
+      `Are you sure you want to delete "${event.title}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await api.deleteCalendarEvent(event.id);
+
+              if (response.success) {
+                fetchEvents();
+                setShowEventListModal(false);
+                Alert.alert('Success', 'Event deleted!');
+              } else {
+                Alert.alert('Error', 'Failed to delete event');
+              }
+            } catch (error) {
+              console.error('Failed to delete event:', error);
+              Alert.alert('Error', 'Failed to delete event.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const getEventTypeInfo = (type: string) => {
+    return eventTypes.find(t => t.value === type) || eventTypes[5];
+  };
+
+  const renderCalendarDay = (day: number | null, index: number) => {
+    if (day === null) {
+      return <View key={`empty-${index}`} style={styles.dayCell} />;
+    }
+
+    const dayEvents = getEventsForDate(day);
+    const hasEvents = dayEvents.length > 0;
+    const today = isToday(day);
+
+    return (
+      <TouchableOpacity
+        key={day}
+        style={[styles.dayCell, today && styles.todayCell]}
+        onPress={() => handleDayPress(day)}
+      >
+        <Text style={[styles.dayText, today && styles.todayText]}>{day}</Text>
+        {hasEvents && (
+          <View style={styles.eventDotsContainer}>
+            {dayEvents.slice(0, 3).map((event, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.eventDot,
+                  { backgroundColor: getEventTypeInfo(event.eventType).color }
+                ]}
+              />
+            ))}
           </View>
         )}
+      </TouchableOpacity>
+    );
+  };
 
-        <View style={styles.eventsSection}>
-          {filteredEvents.length === 0 ? (
-            <View style={styles.noEventsContainer}>
-              <Text style={styles.noEventsIcon}>🗓️</Text>
-              <Text style={styles.noEventsText}>No upcoming events</Text>
-              <Text style={styles.noEventsSubtext}>
-                Create memories and they&apos;ll appear here
-              </Text>
+  return (
+    <View style={styles.container}>
+      {/* Header with days together */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Our Calendar 💕</Text>
+        {daysTogether !== null && (
+          <Text style={styles.daysTogetherText}>Day {daysTogether} Together</Text>
+        )}
+      </View>
+
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#8B2332']} />
+        }
+      >
+        {/* Month Navigation */}
+        <View style={styles.monthNavigation}>
+          <TouchableOpacity onPress={goToPrevMonth} style={styles.navButton}>
+            <Ionicons name="chevron-back" size={24} color="#8B2332" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={goToToday}>
+            <Text style={styles.monthTitle}>
+              {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
+            <Ionicons name="chevron-forward" size={24} color="#8B2332" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Weekday Headers */}
+        <View style={styles.weekdayHeader}>
+          {WEEKDAYS.map(day => (
+            <View key={day} style={styles.weekdayCell}>
+              <Text style={styles.weekdayText}>{day}</Text>
             </View>
-          ) : (
-            filteredEvents.map((event) => {
-              const daysUntil = getDaysUntil(event.date);
-              const isPast = daysUntil < 0;
-              const absDays = Math.abs(daysUntil);
-              const isPinned = pinnedEvents.includes(event.id);
+          ))}
+        </View>
 
-              return (
-                <TouchableOpacity
-                  key={event.id}
-                  style={[styles.dmEventRow, isPinned && styles.dmEventRowPinned]}
-                  onLongPress={() => togglePin(event.id)}
-                  onPress={() => {
-                    if (event.activityId) {
-                      router.push({
-                        pathname: '/memory-detail',
-                        params: { id: event.activityId }
-                      });
-                    }
-                  }}
-                  delayLongPress={500}
-                >
-                  <View style={styles.dmEventLeft}>
-                    <View style={styles.titleRow}>
-                      {isPinned && <Text style={styles.pinIcon}>📌</Text>}
-                      <Text style={styles.dmEventTitle}>{event.title}</Text>
-                    </View>
-                    <View style={styles.dmEventMetaRow}>
-                      <Text style={styles.dmEventDate}>{formatDate(event.date)}</Text>
-                      <Text style={styles.dmEventLunar}>Lunar: N/A</Text>
-                    </View>
-                  </View>
+        {/* Calendar Grid */}
+        <View style={styles.calendarGrid}>
+          {generateCalendarDays().map((day, index) => renderCalendarDay(day, index))}
+        </View>
 
-                  <View style={[styles.dmEventRight, isPast ? styles.dmEventRightPast : styles.dmEventRightFuture]}>
-                    <Text style={styles.dmEventDays}>{absDays}</Text>
-                    <Text style={styles.dmEventUnit}>Days</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
+        {/* Upcoming Events */}
+        <View style={styles.upcomingSection}>
+          <Text style={styles.sectionTitle}>Upcoming Events</Text>
+          {events.filter(e => new Date(e.date) >= new Date()).slice(0, 5).map(event => (
+            <TouchableOpacity
+              key={event.id}
+              style={styles.upcomingEventCard}
+              onPress={() => openEditEventModal(event)}
+            >
+              <View style={[styles.eventTypeBar, { backgroundColor: getEventTypeInfo(event.eventType).color }]} />
+              <View style={styles.upcomingEventContent}>
+                <Text style={styles.upcomingEventTitle}>{event.title}</Text>
+                <Text style={styles.upcomingEventDate}>
+                  {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {!event.isAllDay && event.time && ` at ${event.time.slice(0, 5)}`}
+                </Text>
+                {event.location && (
+                  <Text style={styles.upcomingEventLocation}>📍 {event.location}</Text>
+                )}
+              </View>
+              <Text style={styles.eventTypeIcon}>{getEventTypeInfo(event.eventType).icon}</Text>
+            </TouchableOpacity>
+          ))}
+          {events.filter(e => new Date(e.date) >= new Date()).length === 0 && (
+            <Text style={styles.noEventsText}>No upcoming events. Tap a date to add one!</Text>
           )}
         </View>
       </ScrollView>
 
-      {/* Date Calculator Modal */}
-      <Modal visible={showCalculator} animationType="slide" transparent>
+      {/* FAB */}
+      <TouchableOpacity style={styles.fab} onPress={() => openCreateEventModal(new Date())}>
+        <Ionicons name="add" size={28} color="white" />
+      </TouchableOpacity>
+
+      {/* Event List Modal (when clicking a day with events) */}
+      <Modal
+        visible={showEventListModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowEventListModal(false)}
+      >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Date Calculator</Text>
-            <Text style={styles.modalSubtitle}>Calculate days between two dates</Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Start Date (YYYY-MM-DD)"
-              value={calcStartDate}
-              onChangeText={setCalcStartDate}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="End Date (YYYY-MM-DD)"
-              value={calcEndDate}
-              onChangeText={setCalcEndDate}
-            />
-
-            {calcResult !== null && (
-              <View style={styles.resultContainer}>
-                <Text style={styles.resultLabel}>Difference:</Text>
-                <Text style={styles.resultValue}>{calcResult} Days</Text>
-              </View>
-            )}
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalButtonSecondary} onPress={() => setShowCalculator(false)}>
-                <Text style={styles.modalButtonTextSecondary}>Close</Text>
+          <View style={styles.eventListModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {selectedDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+              </Text>
+              <TouchableOpacity onPress={() => setShowEventListModal(false)}>
+                <Ionicons name="close" size={24} color="#8B2332" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButtonPrimary} onPress={calculateDateDiff}>
-                <Text style={styles.modalButtonTextPrimary}>Calculate</Text>
+            </View>
+
+            <ScrollView style={styles.eventListContent}>
+              {selectedDate && getEventsForDate(selectedDate.getDate()).map(event => (
+                <View key={event.id} style={styles.eventListItem}>
+                  <View style={[styles.eventTypeBar, { backgroundColor: getEventTypeInfo(event.eventType).color }]} />
+                  <View style={styles.eventListItemContent}>
+                    <Text style={styles.eventListItemTitle}>{event.title}</Text>
+                    {!event.isAllDay && event.time && (
+                      <Text style={styles.eventListItemTime}>🕐 {event.time.slice(0, 5)}</Text>
+                    )}
+                    {event.location && (
+                      <Text style={styles.eventListItemLocation}>📍 {event.location}</Text>
+                    )}
+                  </View>
+                  <View style={styles.eventListItemActions}>
+                    <TouchableOpacity onPress={() => openEditEventModal(event)}>
+                      <Ionicons name="create-outline" size={20} color="#8B2332" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDeleteEvent(event)} style={{ marginLeft: 12 }}>
+                      <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.addEventButton}
+              onPress={() => openCreateEventModal(selectedDate || undefined)}
+            >
+              <Ionicons name="add" size={20} color="white" />
+              <Text style={styles.addEventButtonText}>Add Event</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Create/Edit Event Modal */}
+      <Modal
+        visible={showEventModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowEventModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.createEventModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {editingEvent ? 'Edit Event' : 'New Event'}
+              </Text>
+              <TouchableOpacity onPress={() => setShowEventModal(false)}>
+                <Ionicons name="close" size={24} color="#8B2332" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.formContent}>
+              {/* Date Display */}
+              <View style={styles.selectedDateDisplay}>
+                <Ionicons name="calendar" size={20} color="#8B2332" />
+                <Text style={styles.selectedDateText}>
+                  {selectedDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                </Text>
+              </View>
+
+              {/* Title */}
+              <Text style={styles.label}>Event Title *</Text>
+              <TextInput
+                style={styles.input}
+                value={title}
+                onChangeText={setTitle}
+                placeholder="What's the event?"
+                placeholderTextColor="#999"
+              />
+
+              {/* Location */}
+              <Text style={styles.label}>Location</Text>
+              <TextInput
+                style={styles.input}
+                value={location}
+                onChangeText={setLocation}
+                placeholder="Where?"
+                placeholderTextColor="#999"
+              />
+
+              {/* Description */}
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Add details..."
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={3}
+              />
+
+              {/* Event Type */}
+              <Text style={styles.label}>Category</Text>
+              <View style={styles.eventTypeGrid}>
+                {eventTypes.map(type => (
+                  <TouchableOpacity
+                    key={type.value}
+                    style={[
+                      styles.eventTypeButton,
+                      eventType === type.value && { borderColor: type.color, backgroundColor: `${type.color}20` }
+                    ]}
+                    onPress={() => setEventType(type.value)}
+                  >
+                    <Text style={styles.eventTypeButtonIcon}>{type.icon}</Text>
+                    <Text style={[styles.eventTypeButtonLabel, eventType === type.value && { color: type.color }]}>
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* All Day Toggle */}
+              <TouchableOpacity style={styles.toggleRow} onPress={() => setIsAllDay(!isAllDay)}>
+                <Text style={styles.label}>All Day</Text>
+                <Ionicons
+                  name={isAllDay ? 'checkbox' : 'square-outline'}
+                  size={24}
+                  color={isAllDay ? '#8B2332' : '#999'}
+                />
+              </TouchableOpacity>
+
+              {/* Time Picker */}
+              {!isAllDay && (
+                <>
+                  <Text style={styles.label}>Time</Text>
+                  <TouchableOpacity style={styles.timeButton} onPress={() => setShowTimePicker(true)}>
+                    <Ionicons name="time-outline" size={20} color="#8B2332" />
+                    <Text style={styles.timeButtonText}>
+                      {selectedTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {showTimePicker && (
+                    <DateTimePicker
+                      value={selectedTime}
+                      mode="time"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={(event, time) => {
+                        setShowTimePicker(Platform.OS === 'ios');
+                        if (time) setSelectedTime(time);
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            </ScrollView>
+
+            {/* Action Buttons */}
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setShowEventModal(false)}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSaveEvent}>
+                <Text style={styles.saveButtonText}>{editingEvent ? 'Update' : 'Save'}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF5F7',
+    backgroundColor: '#fff'
   },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
+  header: {
+    backgroundColor: '#f8e5e8',
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF5F7',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 24,
-  },
-  anniversariesSection: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-  },
-  daysMatterCard: {
-    backgroundColor: '#8B2332',
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 20,
-    alignItems: 'center',
-    shadowColor: '#8B2332',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  daysMatterHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
-  },
-  daysMatterLabel: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 16,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  daysMatterIcon: {
-    fontSize: 20,
-  },
-  daysMatterCountContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  daysMatterNumber: {
-    fontSize: 72,
-    fontWeight: 'bold',
-    color: '#FFF',
-    lineHeight: 80,
-  },
-  daysMatterUnit: {
-    fontSize: 20,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '600',
-  },
-  daysMatterFooter: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-  },
-  daysMatterDate: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  secondaryStatsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  secondaryStatItem: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  secondaryStatLabel: {
-    fontSize: 12,
-    color: '#999',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  secondaryStatValue: {
+  headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  secondaryStatUnit: {
-    fontSize: 12,
     color: '#8B2332',
-    fontWeight: '600',
-    marginBottom: 4,
+    textAlign: 'center'
   },
-  secondaryStatDate: {
-    fontSize: 12,
-    color: '#666',
+  daysTogetherText: {
+    fontSize: 14,
+    color: '#8B2332',
+    textAlign: 'center',
+    marginTop: 4,
+    opacity: 0.8
   },
-  eventsSection: {},
-  noEventsContainer: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 40,
+  monthNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16
   },
-  noEventsIcon: {
-    fontSize: 48,
-    marginBottom: 12,
+  navButton: {
+    padding: 8
   },
-  noEventsText: {
+  monthTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#666',
-    marginBottom: 8,
+    color: '#8B2332'
   },
-  noEventsSubtext: {
+  weekdayHeader: {
+    flexDirection: 'row',
+    paddingHorizontal: 16
+  },
+  weekdayCell: {
+    width: DAY_WIDTH,
+    alignItems: 'center',
+    paddingVertical: 8
+  },
+  weekdayText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8B2332',
+    opacity: 0.7
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16
+  },
+  dayCell: {
+    width: DAY_WIDTH,
+    height: DAY_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 8
+  },
+  todayCell: {
+    backgroundColor: '#f8e5e8',
+    borderRadius: DAY_WIDTH / 2
+  },
+  dayText: {
+    fontSize: 16,
+    color: '#333'
+  },
+  todayText: {
+    fontWeight: 'bold',
+    color: '#8B2332'
+  },
+  eventDotsContainer: {
+    flexDirection: 'row',
+    marginTop: 4,
+    gap: 2
+  },
+  eventDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3
+  },
+  upcomingSection: {
+    padding: 16,
+    marginTop: 8
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#8B2332',
+    marginBottom: 12
+  },
+  upcomingEventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    overflow: 'hidden'
+  },
+  eventTypeBar: {
+    width: 4,
+    height: '100%',
+    minHeight: 60
+  },
+  upcomingEventContent: {
+    flex: 1,
+    padding: 12
+  },
+  upcomingEventTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333'
+  },
+  upcomingEventDate: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2
+  },
+  upcomingEventLocation: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 2
+  },
+  eventTypeIcon: {
+    fontSize: 24,
+    marginRight: 12
+  },
+  noEventsText: {
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
+    marginTop: 20
   },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFF5F7',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  historyButton: {
-    backgroundColor: '#FFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#8B2332',
-  },
-  historyButtonText: {
-    color: '#8B2332',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  calcButton: {
-    backgroundColor: '#FFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#8B2332',
-  },
-  calcButtonText: {
-    color: '#8B2332',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  backButton: { padding: 8 },
-  backButtonText: { fontSize: 16, color: '#8B2332' },
-  categoryScroll: {
-    marginBottom: 20,
-    maxHeight: 40,
-  },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#FFF',
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  categoryChipActive: {
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#8B2332',
-    borderColor: '#8B2332',
-  },
-  categoryText: {
-    color: '#666',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  categoryTextActive: {
-    color: '#FFF',
-  },
-  dmEventRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  dmEventRowPinned: {
-    backgroundColor: '#FFF5F7',
-    borderColor: '#8B2332',
-    borderWidth: 1,
-  },
-  dmEventLeft: {
-    flex: 1,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
-  },
-  pinIcon: {
-    fontSize: 12,
-  },
-  dmEventTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  dmEventMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dmEventDate: {
-    fontSize: 12,
-    color: '#999',
-  },
-  dmEventLunar: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
-  },
-  dmEventRight: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    minWidth: 80,
     justifyContent: 'center',
-  },
-  dmEventRightFuture: {
-    backgroundColor: '#3B82F6', // Blue for future
-  },
-  dmEventRightPast: {
-    backgroundColor: '#F59E0B', // Orange for past
-  },
-  dmEventDays: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginRight: 4,
-  },
-  dmEventUnit: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '600',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    alignItems: 'center'
   },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
+  eventListModal: {
+    width: '90%',
+    maxHeight: '70%',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    overflow: 'hidden'
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#f8e5e8'
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#8B2332'
+  },
+  eventListContent: {
+    padding: 16,
+    maxHeight: 300
+  },
+  eventListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fafafa',
+    borderRadius: 10,
+    marginBottom: 10,
+    overflow: 'hidden'
+  },
+  eventListItemContent: {
+    flex: 1,
+    padding: 12
+  },
+  eventListItemTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333'
+  },
+  eventListItemTime: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2
+  },
+  eventListItemLocation: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 2
+  },
+  eventListItemActions: {
+    flexDirection: 'row',
+    paddingRight: 12
+  },
+  addEventButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#8B2332',
+    margin: 16,
+    padding: 14,
+    borderRadius: 10,
+    gap: 8
+  },
+  addEventButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  createEventModal: {
+    width: '100%',
+    height: '85%',
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    position: 'absolute',
+    bottom: 0
+  },
+  formContent: {
+    padding: 20,
+    flex: 1
+  },
+  selectedDateDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8e5e8',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    gap: 8
+  },
+  selectedDateText: {
+    fontSize: 15,
+    color: '#8B2332',
+    fontWeight: '500'
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#333',
     marginBottom: 8,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 24,
+    marginTop: 12
   },
   input: {
-    width: '100%',
-    height: 50,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    padding: 14,
     fontSize: 16,
-    backgroundColor: '#F9FAFB',
+    color: '#333',
+    backgroundColor: '#fafafa'
   },
-  resultContainer: {
-    marginVertical: 16,
-    alignItems: 'center',
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top'
   },
-  resultLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  resultValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#8B2332',
-  },
-  modalButtons: {
+  eventTypeGrid: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-    width: '100%',
+    flexWrap: 'wrap',
+    gap: 8
   },
-  modalButtonPrimary: {
-    flex: 1,
-    backgroundColor: '#8B2332',
-    paddingVertical: 14,
-    borderRadius: 12,
+  eventTypeButton: {
+    width: '31%',
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: '#ddd',
+    borderRadius: 10,
     alignItems: 'center',
+    backgroundColor: '#fafafa'
   },
-  modalButtonSecondary: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
+  eventTypeButtonIcon: {
+    fontSize: 20,
+    marginBottom: 4
   },
-  modalButtonTextPrimary: {
-    color: '#FFF',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  modalButtonTextSecondary: {
+  eventTypeButtonLabel: {
+    fontSize: 11,
     color: '#666',
-    fontWeight: '600',
-    fontSize: 16,
+    fontWeight: '500'
   },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16
+  },
+  timeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    padding: 14,
+    backgroundColor: '#fafafa',
+    gap: 10
+  },
+  timeButtonText: {
+    fontSize: 16,
+    color: '#333'
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    gap: 12
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center'
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666'
+  },
+  saveButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: '#8B2332',
+    alignItems: 'center'
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white'
+  }
 });
+
+export default CalendarScreen;

@@ -82,20 +82,33 @@ export interface AddPhotoRequest {
 // ============= Calendar Types =============
 export interface CalendarEvent {
   id: number;
-  activityId: number;
-  date: string;
   title: string;
-  location?: string;
-  activityTitle?: string;
-  activityDescription?: string;
-  createdAt: string;
+  description?: string | null;
+  date: string;
+  event_date?: string;
+  time?: string | null;
+  event_time?: string | null;
+  isAllDay?: boolean;
+  is_all_day?: boolean;
+  eventType?: string;
+  event_type?: string;
+  location?: string | null;
+  addedBy?: number;
+  added_by_user_id?: number;
+  addedByName?: string;
+  added_by_name?: string;
+  createdAt?: string;
+  created_at?: string;
 }
 
 export interface CreateCalendarEventRequest {
-  activityId: number;
-  date: string;
   title: string;
-  location?: string;
+  description?: string | null;
+  date: string;
+  time?: string | null;
+  isAllDay?: boolean;
+  eventType?: string;
+  location?: string | null;
 }
 
 export interface Anniversary {
