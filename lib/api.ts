@@ -266,6 +266,13 @@ export const api = {
     return authHttp<Anniversary>("/api/calendar/anniversaries");
   },
 
+  async updateCalendarEvent(id: number, data: CreateCalendarEventRequest) {
+    return authHttp<CalendarEvent>(`/api/calendar/events/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
   async deleteCalendarEvent(id: number) {
     return authHttp<void>(`/api/calendar/events/${id}`, {
       method: "DELETE",

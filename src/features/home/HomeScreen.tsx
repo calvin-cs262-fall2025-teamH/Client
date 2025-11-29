@@ -66,7 +66,8 @@ export function HomeScreen() {
     },
     {
       title: 'Anniversary Reminders',
-      action: () => router.push('/calendar-screen'),
+      action: () => Alert.alert('Coming Soon', 'We are still building the anniversary reminders feature. Stay tuned!'),
+      disabled: true,
     },
     {
       title: 'Shared To-Do List',
