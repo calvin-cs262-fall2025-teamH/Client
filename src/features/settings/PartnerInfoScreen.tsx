@@ -86,6 +86,26 @@ export function PartnerInfoScreen() {
           </View>
 
           <View style={styles.infoRow}>
+            <Text style={styles.label}>Date of Birth:</Text>
+            <Text style={styles.value}>{partnerInfo.dateOfBirth || 'Not set'}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Major:</Text>
+            <Text style={styles.value}>{partnerInfo.major || 'Not set'}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Year:</Text>
+            <Text style={styles.value}>{partnerInfo.year || 'Not set'}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Hobby:</Text>
+            <Text style={styles.value}>{partnerInfo.hobby || 'Not set'}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
             <Text style={styles.label}>Emoji:</Text>
             <Text style={styles.emojiValue}>{partnerInfo.emoji || '😭'}</Text>
           </View>

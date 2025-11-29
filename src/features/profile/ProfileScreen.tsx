@@ -19,59 +19,75 @@ export function ProfileScreen() {
   }, []);
 
   const loadProfile = async () => {
-  try {
-    console.log('[Profile] Loading profile...');
-    const response = await api.getProfile();
-    console.log('[Profile] Profile response:', response);
+    try {
+      console.log('[Profile] Loading profile...');
+      const response = await api.getProfile();
+      console.log('[Profile] Profile response:', response);
 
-    if (response.success && response.data) {
-      setName(response.data.name || '');
-      setDateOfBirth(response.data.dateOfBirth || '');
-      setMajor(response.data.major || '');
-      setYear(response.data.year || '');
-      setHobby(response.data.hobby || '');
+      if (response.success && response.data) {
+        setName(response.data.name || '');
+        setDateOfBirth(response.data.dateOfBirth || '');
+        setMajor(response.data.major || '');
+        setYear(response.data.year || '');
+        setHobby(response.data.hobby || '');
+      }
+    } catch (error: any) {
+      console.error('[Profile] Load profile error:', error);
+      Alert.alert('Error', error.message || 'Failed to load profile');
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    console.error('[Profile] Load profile error:', error);
-    Alert.alert('Error', error.message || 'Failed to load profile');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
+
+  const handleDateChange = (text: string) => {
+    // Remove any non-numeric characters
+    const cleaned = text.replace(/[^0-9]/g, '');
+
+    // Format as MM/DD/YYYY
+    let formatted = cleaned;
+    if (cleaned.length > 2) {
+      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
+    }
+    if (cleaned.length > 4) {
+      formatted = formatted.slice(0, 5) + '/' + cleaned.slice(4, 8);
+    }
+
+    setDateOfBirth(formatted);
+  };
 
   const handleSave = async () => {
-  if (!name.trim()) {
-    Alert.alert('Error', 'Please enter your name');
-    return;
-  }
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
 
     try {
-    setSaving(true);
-    console.log('[Profile] Saving profile:', { name, dateOfBirth, major, year, hobby });
+      setSaving(true);
+      console.log('[Profile] Saving profile:', { name, dateOfBirth, major, year, hobby });
 
-    const response = await api.updateProfile({
-      name: name.trim(),
-      dateOfBirth,
-      major,
-      year,
-      hobby
-    });
+      const response = await api.updateProfile({
+        name: name.trim(),
+        dateOfBirth,
+        major,
+        year,
+        hobby
+      });
 
-    console.log('[Profile] Save response:', response);
+      console.log('[Profile] Save response:', response);
 
-    if (response.success) {
-      Alert.alert('Success', 'Profile updated!', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
+      if (response.success) {
+        Alert.alert('Success', 'Profile updated!', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      }
+    } catch (error: any) {
+      console.error('[Profile] Save profile error:', error);
+      Alert.alert('Error', error.message || 'Failed to save profile');
+    } finally {
+      setSaving(false);
     }
-  } catch (error: any) {
-    console.error('[Profile] Save profile error:', error);
-    Alert.alert('Error', error.message || 'Failed to save profile');
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
 
   if (loading) {
@@ -109,7 +125,9 @@ export function ProfileScreen() {
             style={styles.input}
             placeholder="MM/DD/YYYY"
             value={dateOfBirth}
-            onChangeText={setDateOfBirth}
+            onChangeText={handleDateChange}
+            keyboardType="numeric"
+            maxLength={10}
           />
 
           <ThemedText style={styles.label}>Major</ThemedText>

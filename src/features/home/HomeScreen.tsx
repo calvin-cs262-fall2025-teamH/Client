@@ -109,7 +109,10 @@ export function HomeScreen() {
         </TouchableOpacity>
 
         {hasPartner && partner ? (
-          <TouchableOpacity style={[styles.profileCard, styles.partnerCard]}>
+          <TouchableOpacity
+            style={[styles.profileCard, styles.partnerCard]}
+            onPress={() => router.push('/partner-info')}
+          >
             <Text style={styles.partnerEmoji}>{partnerEmoji}</Text>
             <Text style={styles.profileText}>{partner.name || partner.email}</Text>
           </TouchableOpacity>

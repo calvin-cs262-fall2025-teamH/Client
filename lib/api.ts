@@ -20,7 +20,7 @@ import type {
 } from "@/types/api";
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://192.168.7.148:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://192.168.7.209:4000";
 
 console.log('[api] BASE URL configured as:', BASE);
 
@@ -133,33 +133,33 @@ export const api = {
 
   // ============= User/Partner APIs =============
   async getProfile() {
-  return authHttp<{
-    id: number;
-    email: string;
-    name: string | null;
-    coupleId: number | null;
-    hasPartner: boolean;
-    partner: { id: number; email: string; name: string | null } | null;
-    createdAt: string;
-    dateOfBirth: string | null;
-    major: string | null;
-    year: string | null;
-    hobby: string | null;
-  }>("/api/user/profile");
-},
+    return authHttp<{
+      id: number;
+      email: string;
+      name: string | null;
+      coupleId: number | null;
+      hasPartner: boolean;
+      partner: { id: number; email: string; name: string | null } | null;
+      createdAt: string;
+      dateOfBirth: string | null;
+      major: string | null;
+      year: string | null;
+      hobby: string | null;
+    }>("/api/user/profile");
+  },
 
   async updateProfile(data: {
-  name?: string;
-  dateOfBirth?: string;
-  major?: string;
-  year?: string;
-  hobby?: string;
-}) {
-  return authHttp<any>("/api/user/profile", {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
-},
+    name?: string;
+    dateOfBirth?: string;
+    major?: string;
+    year?: string;
+    hobby?: string;
+  }) {
+    return authHttp<any>("/api/user/profile", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
 
   async generatePairingCode() {
     return authHttp<{ code: string; expiresAt: string }>("/api/user/partner/generate-code", {
