@@ -20,7 +20,11 @@ import type {
 } from "@/types/api";
 
 export const BASE =
+<<<<<<< Updated upstream
   process.env.EXPO_PUBLIC_API_BASE || "http://192.168.7.209:4000";
+=======
+  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.89.1:4000";
+>>>>>>> Stashed changes
 
 console.log('[api] BASE URL configured as:', BASE);
 
