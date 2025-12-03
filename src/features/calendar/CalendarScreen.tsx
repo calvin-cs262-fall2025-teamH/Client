@@ -1001,7 +1001,6 @@ export default function CalendarScreen() {
                     </TouchableOpacity>
                   );
                 })}
-                ))}
               </View>
             </TouchableOpacity>
           ))}
