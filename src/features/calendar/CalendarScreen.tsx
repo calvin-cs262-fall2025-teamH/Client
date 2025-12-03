@@ -44,7 +44,6 @@ export default function CalendarScreen() {
 
   // Modal state
   const [showEventModal, setShowEventModal] = useState(false);
-  const [showEventList, setShowEventList] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // Event form state
