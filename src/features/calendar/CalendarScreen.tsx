@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -57,7 +57,6 @@ export default function CalendarScreen() {
   const [datePickerMonth, setDatePickerMonth] = useState(new Date());
 
   // Time picker state
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   // Theme colors
@@ -748,22 +747,6 @@ export default function CalendarScreen() {
       </ScrollView>
     );
   };
-
-  // Get all-day events for the week
-  const getWeekAllDayEvents = useCallback((weekDates: Date[]) => {
-    const allDayEvents: { date: Date; events: CalendarEvent[] }[] = [];
-    weekDates.forEach(date => {
-      const dayAllDayEvents = getEventsForDate(date).filter(e => {
-        const isAllDay = e.isAllDay || e.is_all_day;
-        const hasTime = e.time || e.event_time;
-        return isAllDay || !hasTime;
-      });
-      if (dayAllDayEvents.length > 0) {
-        allDayEvents.push({ date, events: dayAllDayEvents });
-      }
-    });
-    return allDayEvents;
-  }, [getEventsForDate]);
 
   // Render week view
   const renderWeekView = () => {
