@@ -23,7 +23,7 @@ export function HomeScreen() {
           setPartnerEmoji(response.data.partner.emoji);
         }
       }
-    } catch (error) {
+    } catch {
       // Silently handle error
     }
   }, []);
@@ -31,7 +31,7 @@ export function HomeScreen() {
   // Only load once when component mounts
   useEffect(() => {
     loadUserProfile();
-  }, []);
+  }, [loadUserProfile]);
 
   // 当页面获得焦点时刷新数据
   useFocusEffect(
@@ -139,7 +139,7 @@ export function HomeScreen() {
                   // 异步保存到后台
                   try {
                     await api.updateProfile({ emoji });
-                  } catch (error) {
+                  } catch {
                     // Silently handle error
                   }
                 }}
