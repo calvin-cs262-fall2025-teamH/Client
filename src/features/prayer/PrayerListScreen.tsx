@@ -30,9 +30,9 @@ export function PrayerListScreen() {
       const response = await api.getPrayers();
       console.log('[PrayerList] Prayers response:', response);
       setPrayers(response.data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[PrayerList] Prayers error:', error);
-      Alert.alert('Error', error.message || 'Failed to load prayers');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load prayers');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -65,9 +65,9 @@ export function PrayerListScreen() {
         setShowAddModal(false);
         Alert.alert('Success', 'Prayer added successfully');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[PrayerList] Add prayer error:', error);
-      Alert.alert('Error', error.message || 'Failed to add prayer');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to add prayer');
     }
   };
 
@@ -79,8 +79,8 @@ export function PrayerListScreen() {
         setPrayers((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
         Alert.alert('Updated', `Marked as ${updated.isAnswered ? 'answered' : 'unanswered'}.`);
       }
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update prayer status');
+    } catch (error: unknown) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to update prayer status');
     }
   };
 
@@ -114,9 +114,9 @@ export function PrayerListScreen() {
         setEditForm({ title: '', content: '' });
         Alert.alert('Success', 'Prayer updated successfully');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[PrayerList] Update prayer error:', error);
-      Alert.alert('Error', error.message || 'Failed to update prayer');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to update prayer');
     }
   };
 
@@ -134,8 +134,8 @@ export function PrayerListScreen() {
               await api.deletePrayer(id);
               setPrayers(prayers.filter((p) => p.id !== id));
               Alert.alert('Success', 'Prayer deleted');
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete prayer');
+            } catch (error: unknown) {
+              Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete prayer');
             }
           },
         },

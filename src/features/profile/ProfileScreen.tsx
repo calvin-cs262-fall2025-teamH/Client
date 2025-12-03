@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, SafeAreaView, ActivityIndicator, View } from 'react-native';
+import { TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, SafeAreaView, ActivityIndicator } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { router } from 'expo-router';
@@ -31,9 +31,9 @@ export function ProfileScreen() {
         setYear(response.data.year || '');
         setHobby(response.data.hobby || '');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Profile] Load profile error:', error);
-      Alert.alert('Error', error.message || 'Failed to load profile');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -81,9 +81,9 @@ export function ProfileScreen() {
           { text: 'OK', onPress: () => router.back() }
         ]);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Profile] Save profile error:', error);
-      Alert.alert('Error', error.message || 'Failed to save profile');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save profile');
     } finally {
       setSaving(false);
     }

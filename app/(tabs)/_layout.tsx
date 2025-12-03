@@ -14,21 +14,21 @@ export default function TabsLayout() {
         name="chat"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>⚙️</Text>,
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>⚙️</Text>,
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🏠</Text>,
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>🏠</Text>,
         }}
       />
       <Tabs.Screen
         name="collage"
         options={{
           title: 'Collage',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>📸</Text>,
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>📸</Text>,
         }}
       />
     </Tabs>

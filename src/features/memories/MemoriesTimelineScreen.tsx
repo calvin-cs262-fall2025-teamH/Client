@@ -30,8 +30,8 @@ export function MemoriesTimelineScreen() {
       setLoading(true);
       const response = await api.getTimeline();
       setActivities(response.data || []);
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load timeline');
+    } catch (error: unknown) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load timeline');
     } finally {
       setLoading(false);
     }
@@ -92,9 +92,9 @@ export function MemoriesTimelineScreen() {
       await api.addPhoto(activityId, { photoUrl: dataUrl });
       await loadTimeline();
       Alert.alert('Success', 'Photo added to this memory.');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[timeline] add photo error', error);
-      Alert.alert('Error', error.message || 'Failed to upload photo.');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to upload photo.');
     } finally {
       setUploadingActivityId(null);
     }
@@ -161,7 +161,6 @@ export function MemoriesTimelineScreen() {
                     <Image
                       source={{ uri: photo.photoUrl }}
                       style={styles.photo}
-                      defaultSource={require('@/assets/images/react-logo.png')}
                     />
                   </View>
                 ))}
