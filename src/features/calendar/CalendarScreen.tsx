@@ -9,8 +9,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Dimensions,
-  Platform,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,8 +17,6 @@ import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { CalendarEvent, CreateCalendarEventRequest } from '@/types/api';
 import * as Calendar from 'expo-calendar';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type ViewMode = 'month' | 'week' | 'day';
 
@@ -58,10 +54,6 @@ export default function CalendarScreen() {
   // Date picker state for event modal
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerMonth, setDatePickerMonth] = useState(new Date());
-
-  // Time picker state
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   // Theme colors
   const theme = {
@@ -310,7 +302,7 @@ export default function CalendarScreen() {
                 setShowEventModal(false);
                 fetchEvents();
               }
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to delete event');
             }
           },
