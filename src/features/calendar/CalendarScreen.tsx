@@ -9,8 +9,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Dimensions,
-  Platform,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,8 +17,6 @@ import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { CalendarEvent, CreateCalendarEventRequest } from '@/types/api';
 import * as Calendar from 'expo-calendar';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type ViewMode = 'month' | 'week' | 'day';
 
