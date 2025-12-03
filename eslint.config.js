@@ -8,7 +8,10 @@ module.exports = [
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     languageOptions: {
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        structuredClone: 'readonly',
+      },
       ecmaVersion: 2020,
       sourceType: 'module',
     },
