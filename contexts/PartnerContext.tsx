@@ -106,8 +106,8 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
         return response.data.code;
       }
       throw new Error(response.error || 'Failed to generate code');
-    } catch (error: any) {
-      console.error('[generateCode] Error:', error.message);
+    } catch (error: unknown) {
+      console.error('[generateCode] Error:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   };
@@ -122,7 +122,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
       } else {
         throw new Error(response.error || 'Failed to connect with partner');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error connecting with partner:', error);
       throw error;
     }
@@ -139,7 +139,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
       } else {
         throw new Error(response.error || 'Failed to unmatch');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error unmatching partner:', error);
       throw error;
     }

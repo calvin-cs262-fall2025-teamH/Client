@@ -40,8 +40,8 @@ export function CreateMemoryScreen() {
           onPress: () => router.back(),
         },
       ]);
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create memory');
+    } catch (error: unknown) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create memory');
     } finally {
       setLoading(false);
     }

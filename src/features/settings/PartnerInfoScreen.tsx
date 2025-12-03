@@ -4,7 +4,7 @@ import { useFocusEffect, router } from 'expo-router';
 import { api } from '@/lib/api';
 
 export function PartnerInfoScreen() {
-  const [partnerInfo, setPartnerInfo] = useState<any>(null);
+  const [partnerInfo, setPartnerInfo] = useState<{ id: number; email: string; name: string | null } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 

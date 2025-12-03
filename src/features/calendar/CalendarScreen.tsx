@@ -239,7 +239,7 @@ export default function CalendarScreen() {
     setIsAllDay(event.isAllDay);
     setStartTime(event.time || '09:00');
     setEndTime(event.endTime || '10:00');
-    setEventType(event.eventType as any || 'other');
+    setEventType((event.eventType as string) || 'other');
     setShowEventModal(true);
     setShowEventList(false);
   };

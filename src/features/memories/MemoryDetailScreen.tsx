@@ -46,8 +46,8 @@ export function MemoryDetailScreen() {
       setLoading(true);
       const response = await api.getActivity(parseInt(id));
       setActivity(response.data || null);
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load activity');
+    } catch (error: unknown) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load activity');
       router.back();
     } finally {
       setLoading(false);
@@ -79,7 +79,7 @@ export function MemoryDetailScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images' as any,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.8,
       });
@@ -87,9 +87,9 @@ export function MemoryDetailScreen() {
       if (!result.canceled) {
         await uploadImage(result.assets[0].uri);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Pick image error:', error);
-      Alert.alert('Error', `Failed to pick image: ${error.message || 'Unknown error'}`);
+      Alert.alert('Error', `Failed to pick image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -109,9 +109,9 @@ export function MemoryDetailScreen() {
       if (!result.canceled) {
         await uploadImage(result.assets[0].uri);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Take photo error:', error);
-      Alert.alert('Error', `Failed to take photo: ${error.message || 'Unknown error'}`);
+      Alert.alert('Error', `Failed to take photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -144,20 +144,20 @@ export function MemoryDetailScreen() {
       try {
         const uploadResult = await FileSystem.uploadAsync(uploadUrl, uri, {
           httpMethod: 'POST',
-          uploadType: 0, // 0 = BINARY_CONTENT
+          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
           headers: {
             'Content-Type': 'image/jpeg',
           },
-        } as any);
+        });
 
         if (uploadResult.status !== 200) {
           throw new Error(`Upload failed with status ${uploadResult.status}`);
         }
 
         console.log('Upload successful:', uploadResult.body);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error('Firebase raw error:', e);
-        throw new Error(`Firebase Upload Failed: ${e.message}`);
+        throw new Error(`Firebase Upload Failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
       }
 
       // Get the download URL
@@ -168,15 +168,15 @@ export function MemoryDetailScreen() {
         await api.addPhoto(parseInt(id), {
           photoUrl: downloadURL,
         });
-      } catch (e: any) {
-        throw new Error(`Backend Save Failed: ${e.message}`);
+      } catch (e: unknown) {
+        throw new Error(`Backend Save Failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
       }
 
       loadActivity();
       Alert.alert('Success', 'Photo added successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
-      Alert.alert('Upload Error', error.message || 'Failed to upload image');
+      Alert.alert('Upload Error', error instanceof Error ? error.message : 'Failed to upload image');
     } finally {
       setUploading(false);
     }
@@ -195,8 +195,8 @@ export function MemoryDetailScreen() {
             try {
               await api.deleteActivity(parseInt(id!));
               router.back();
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete memory');
+            } catch (error: unknown) {
+              Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete memory');
             }
           },
         },

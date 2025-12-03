@@ -36,8 +36,8 @@ export function SettingsScreen() {
             try {
               await unmatchPartner();
               Alert.alert('Success', 'You have been unmatched from your partner.');
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to unmatch');
+            } catch (error: unknown) {
+              Alert.alert('Error', error instanceof Error ? error.message : 'Failed to unmatch');
             }
           },
         },

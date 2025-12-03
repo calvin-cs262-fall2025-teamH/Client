@@ -66,9 +66,9 @@ async function http<T>(path: string, options: RequestInit = {}): Promise<ApiResp
       throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
     }
     return data as ApiResponse<T>;
-  } catch (error: any) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       console.error(`[http] Request timeout after 30s for ${path}`);
       throw new Error('Request timed out. Please check your connection and try again.');
     }
@@ -99,8 +99,8 @@ async function authHttp<T>(path: string, options: RequestInit = {}): Promise<Api
     const elapsed = Date.now() - startTime;
     console.log(`[authHttp] Success for ${path} in ${elapsed}ms:`, result);
     return result;
-  } catch (error: any) {
-    console.error(`[authHttp] Error for ${path}:`, error.message);
+  } catch (error: unknown) {
+    console.error(`[authHttp] Error for ${path}:`, error instanceof Error ? error.message : 'Unknown error');
     throw error;
   }
 }
@@ -155,7 +155,7 @@ export const api = {
     year?: string;
     hobby?: string;
   }) {
-    return authHttp<any>("/api/user/profile", {
+    return authHttp<Record<string, unknown>>("/api/user/profile", {
       method: "PUT",
       body: JSON.stringify(data),
     });
