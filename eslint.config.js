@@ -4,7 +4,7 @@ const globals = require('globals');
 const tseslint = require('typescript-eslint');
 const pluginReact = require('eslint-plugin-react');
 
-module.exports = tseslint.config(
+module.exports = [
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     languageOptions: {
@@ -15,18 +15,15 @@ module.exports = tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  pluginReact.configs.flat.recommended,
   {
+    ...pluginReact.configs.flat.recommended,
     settings: {
       react: {
         version: 'detect',
       },
-      'import/resolver': {
-        typescript: {
-          project: './tsconfig.json',
-        },
-      },
     },
+  },
+  {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     rules: {
       'react/react-in-jsx-scope': 'off',
@@ -41,5 +38,5 @@ module.exports = tseslint.config(
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
     },
-  }
-);
+  },
+];
