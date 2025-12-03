@@ -61,7 +61,6 @@ export default function CalendarScreen() {
   const [datePickerMonth, setDatePickerMonth] = useState(new Date());
 
   // Time picker state
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   // Theme colors
