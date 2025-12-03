@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { api, getToken } from '../lib/api';
 
 interface Partner {
@@ -29,7 +29,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
   const [myCode, setMyCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshPartner = async (silent = false) => {
+  const refreshPartner = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       const token = await getToken();
@@ -88,7 +88,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       if (!silent) setLoading(false);
     }
-  };
+  }, [coupleId, hasPartner, partner, myCode]);
 
   const generateCode = async (): Promise<string> => {
     try {
@@ -149,7 +149,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     console.log('[PartnerContext] Component mounted, loading partner info');
     refreshPartner();
-  }, []);
+  }, [refreshPartner]);
 
   // Poll for partner connection ONLY if we have a code and no partner yet
   // This is for waiting for the other person to connect using your code
@@ -175,7 +175,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
         clearInterval(intervalId);
       }
     };
-  }, [myCode, hasPartner]);
+  }, [myCode, hasPartner, refreshPartner]);
 
   return (
     <PartnerContext.Provider
