@@ -303,7 +303,7 @@ export default function CalendarScreen() {
                 setShowEventModal(false);
                 fetchEvents();
               }
-            } catch (_error) {
+            } catch {
               Alert.alert('Error', 'Failed to delete event');
             }
           },
