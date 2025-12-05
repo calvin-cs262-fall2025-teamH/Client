@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { usePartner } from '@/contexts/PartnerContext';
 import { api } from '@/lib/api';
 
@@ -58,19 +59,35 @@ export function HomeScreen() {
   const featureCards = useMemo(() => ([
     {
       title: 'Prayer List',
+      subtitle: 'Share your prayers together',
+      icon: 'heart-outline' as const,
+      color: '#FF6B9D',
+      gradient: ['#FFE5F0', '#FFD1E3'],
       action: () => router.push('/prayer-list'),
     },
     {
       title: 'Calendar',
+      subtitle: 'Plan your time together',
+      icon: 'calendar-outline' as const,
+      color: '#8B2332',
+      gradient: ['#F8E5E8', '#F5C8D2'],
       action: () => router.push('/calendar-screen'),
     },
     {
-      title: 'Anniversary Reminders',
+      title: 'Anniversary',
+      subtitle: 'Never miss special days',
+      icon: 'gift-outline' as const,
+      color: '#D946A6',
+      gradient: ['#FAE8F5', '#F3D4EB'],
       action: () => Alert.alert('Coming Soon', 'We are still building the anniversary reminders feature. Stay tuned!'),
       disabled: true,
     },
     {
-      title: 'Shared To-Do List',
+      title: 'To-Do List',
+      subtitle: 'Accomplish goals together',
+      icon: 'checkmark-circle-outline' as const,
+      color: '#C026D3',
+      gradient: ['#F5E5FA', '#EBD1F0'],
       action: () => Alert.alert('Coming Soon', 'We are still building the shared to-do list experience. Stay tuned!'),
       disabled: true,
     },
@@ -155,12 +172,36 @@ export function HomeScreen() {
         {featureCards.map((card) => (
           <TouchableOpacity
             key={card.title}
-            style={[styles.featureBtn, card.disabled && styles.featureBtnDisabled]}
+            style={[
+              styles.featureBtn,
+              card.disabled && styles.featureBtnDisabled
+            ]}
             onPress={card.action}
             disabled={card.disabled}
+            activeOpacity={0.7}
           >
-
-            <Text style={styles.featureTitle}>{card.title}</Text>
+            <View style={[
+              styles.featureIconContainer,
+              { backgroundColor: card.gradient[0] }
+            ]}>
+              <Ionicons
+                name={card.icon}
+                size={32}
+                color={card.disabled ? '#999' : card.color}
+              />
+            </View>
+            <Text style={[
+              styles.featureTitle,
+              card.disabled && styles.featureTitleDisabled
+            ]}>
+              {card.title}
+            </Text>
+            <Text style={[
+              styles.featureSubtitle,
+              card.disabled && styles.featureSubtitleDisabled
+            ]}>
+              {card.subtitle}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -221,21 +262,67 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8e5e8',
   },
   connectText: { fontSize: 16, fontWeight: '600', color: '#8B2332' },
-  featuresGrid: { width: '100%', gap: 12 },
-  featureBtn: {
+  featuresGrid: {
     width: '100%',
-    padding: 18,
-    borderRadius: 16,
-    backgroundColor: '#f8e5e8',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'space-between',
+  },
+  featureBtn: {
+    width: '47%',
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#f5c8d2',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#8B2332',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    minHeight: 160,
   },
   featureBtnDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
+    backgroundColor: '#f5f5f5',
+    borderColor: '#e0e0e0',
   },
-  featureTitle: { fontSize: 18, fontWeight: '700', color: '#8B2332', textAlign: 'center' },
+  featureIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#8B2332',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  featureTitleDisabled: {
+    color: '#999',
+  },
+  featureSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  featureSubtitleDisabled: {
+    color: '#aaa',
+  },
   emojiPicker: { width: '100%', padding: 16, marginBottom: 16, backgroundColor: '#f8e5e8', borderRadius: 12, borderWidth: 1, borderColor: '#8B2332' },
   emojiPickerTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
   emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
