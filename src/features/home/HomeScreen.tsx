@@ -204,7 +204,7 @@ export function HomeScreen() {
 
         {/* Modern feature cards */}
         <View style={styles.featuresGrid}>
-          {featureCards.map((card, index) => (
+          {featureCards.map((card) => (
             <TouchableOpacity
               key={card.title}
               style={[
