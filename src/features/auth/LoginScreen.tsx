@@ -13,8 +13,8 @@ export function LoginScreen() {
       await new Promise(resolve => setTimeout(resolve, 100));
       Alert.alert('Success', 'Logged in!');
       router.replace('/(tabs)');
-    } catch (err: any) {
-      Alert.alert('Login Failure', err.message || 'invalid password or email！');
+    } catch (err: unknown) {
+      Alert.alert('Login Failure', err instanceof Error ? err.message : 'invalid password or email！');
     }
   };
 
@@ -22,8 +22,8 @@ export function LoginScreen() {
     try {
       await api.register(email, password);
       Alert.alert('Register Success', 'Account created! You can now login.');
-    } catch (err: any) {
-      Alert.alert('Register Failure', err.message || 'email might be used!');
+    } catch (err: unknown) {
+      Alert.alert('Register Failure', err instanceof Error ? err.message : 'email might be used!');
     }
   };
 

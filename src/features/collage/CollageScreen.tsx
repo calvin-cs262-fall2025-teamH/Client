@@ -139,8 +139,8 @@ export function CollageScreen() {
     try {
       const response = await api.getTimeline();
       setActivities(response.data || []);
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load timeline');
+    } catch (error: unknown) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load timeline');
     } finally {
       setLoading(false);
       setRefreshing(false);

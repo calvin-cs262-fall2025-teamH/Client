@@ -25,9 +25,9 @@ export function ConnectPartnerScreen() {
       setLoading(true);
       await generateCode();
       Alert.alert('Code Generated', 'Your code has been generated. Share it with your partner!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Generate code error:', error);
-      Alert.alert('Error', error.message || 'Failed to generate code');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to generate code');
     } finally {
       setLoading(false);
     }
@@ -47,9 +47,9 @@ export function ConnectPartnerScreen() {
         'Connected with partner successfully!',
         [{ text: 'OK', onPress: () => router.back() }]
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Connect partner error:', error);
-      Alert.alert('Error', error.message || 'Failed to connect with partner');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to connect with partner');
     } finally {
       setLoading(false);
     }

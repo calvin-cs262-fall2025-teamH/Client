@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,6 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Dimensions,
-  Platform,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,8 +17,6 @@ import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { CalendarEvent, CreateCalendarEventRequest } from '@/types/api';
 import * as Calendar from 'expo-calendar';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type ViewMode = 'month' | 'week' | 'day';
 
@@ -44,7 +40,6 @@ export default function CalendarScreen() {
 
   // Modal state
   const [showEventModal, setShowEventModal] = useState(false);
-  const [showEventList, setShowEventList] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // Event form state
@@ -59,10 +54,6 @@ export default function CalendarScreen() {
   // Date picker state for event modal
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerMonth, setDatePickerMonth] = useState(new Date());
-
-  // Time picker state
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   // Theme colors
   const theme = {
@@ -248,7 +239,7 @@ export default function CalendarScreen() {
     setIsAllDay(event.isAllDay);
     setStartTime(event.time || '09:00');
     setEndTime(event.endTime || '10:00');
-    setEventType(event.eventType as any || 'other');
+    setEventType((event.eventType as string) || 'other');
     setShowEventModal(true);
     setShowEventList(false);
   };
@@ -311,7 +302,7 @@ export default function CalendarScreen() {
                 setShowEventModal(false);
                 fetchEvents();
               }
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to delete event');
             }
           },
@@ -753,22 +744,6 @@ export default function CalendarScreen() {
     );
   };
 
-  // Get all-day events for the week
-  const getWeekAllDayEvents = useCallback((weekDates: Date[]) => {
-    const allDayEvents: { date: Date; events: CalendarEvent[] }[] = [];
-    weekDates.forEach(date => {
-      const dayAllDayEvents = getEventsForDate(date).filter(e => {
-        const isAllDay = e.isAllDay || e.is_all_day;
-        const hasTime = e.time || e.event_time;
-        return isAllDay || !hasTime;
-      });
-      if (dayAllDayEvents.length > 0) {
-        allDayEvents.push({ date, events: dayAllDayEvents });
-      }
-    });
-    return allDayEvents;
-  }, [getEventsForDate]);
-
   // Render week view
   const renderWeekView = () => {
     const weekDates = getWeekDates(currentDate);
@@ -1001,7 +976,6 @@ export default function CalendarScreen() {
                     </TouchableOpacity>
                   );
                 })}
-                ))}
               </View>
             </TouchableOpacity>
           ))}

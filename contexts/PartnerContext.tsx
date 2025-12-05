@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { api, getToken } from '../lib/api';
 
 interface Partner {
@@ -29,7 +29,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
   const [myCode, setMyCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshPartner = async (silent = false) => {
+  const refreshPartner = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       const token = await getToken();
@@ -88,7 +88,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       if (!silent) setLoading(false);
     }
-  };
+  }, [coupleId, hasPartner, partner, myCode]);
 
   const generateCode = async (): Promise<string> => {
     try {
@@ -106,8 +106,8 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
         return response.data.code;
       }
       throw new Error(response.error || 'Failed to generate code');
-    } catch (error: any) {
-      console.error('[generateCode] Error:', error.message);
+    } catch (error: unknown) {
+      console.error('[generateCode] Error:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   };
@@ -122,7 +122,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
       } else {
         throw new Error(response.error || 'Failed to connect with partner');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error connecting with partner:', error);
       throw error;
     }
@@ -139,7 +139,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
       } else {
         throw new Error(response.error || 'Failed to unmatch');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error unmatching partner:', error);
       throw error;
     }
@@ -149,7 +149,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     console.log('[PartnerContext] Component mounted, loading partner info');
     refreshPartner();
-  }, []);
+  }, [refreshPartner]);
 
   // Poll for partner connection ONLY if we have a code and no partner yet
   // This is for waiting for the other person to connect using your code
@@ -175,7 +175,7 @@ export const PartnerProvider = ({ children }: { children: ReactNode }) => {
         clearInterval(intervalId);
       }
     };
-  }, [myCode, hasPartner]);
+  }, [myCode, hasPartner, refreshPartner]);
 
   return (
     <PartnerContext.Provider
