@@ -49,7 +49,7 @@ export default function CalendarScreen() {
   const [isAllDay, setIsAllDay] = useState(true);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
-  const [eventType, setEventType] = useState<'date' | 'anniversary' | 'reminder' | 'other'>('other');
+  const [eventType, setEventType] = useState<'date' | 'anniversary' | 'reminder' | 'work' | 'exercise' | 'shopping' | 'travel' | 'study' | 'party' | 'other'>('other');
 
   // Date picker state for event modal
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -241,7 +241,6 @@ export default function CalendarScreen() {
     setEndTime(event.endTime || '10:00');
     setEventType((event.eventType as string) || 'other');
     setShowEventModal(true);
-    setShowEventList(false);
   };
 
   // Save event
@@ -330,21 +329,59 @@ export default function CalendarScreen() {
 
       let syncCount = 0;
       for (const event of events) {
-        const startDate = new Date(`${event.date}T${event.time || '00:00'}:00`);
-        const endDate = new Date(`${event.date}T${event.endTime || event.time || '23:59'}:00`);
+        try {
+          // Normalize the date string from API
+          const eventDate = normalizeDate(event.date || event.event_date || '');
+          if (!eventDate) continue;
 
-        await Calendar.createEventAsync(defaultCalendar.id, {
-          title: event.title,
-          notes: event.description,
-          location: event.location,
-          startDate,
-          endDate,
-          allDay: event.isAllDay,
-        });
-        syncCount++;
+          // Parse date parts
+          const [year, month, day] = eventDate.split('-').map(Number);
+
+          // Create date objects with proper timezone handling
+          let startDate: Date;
+          let endDate: Date;
+
+          if (event.isAllDay || event.is_all_day) {
+            // For all-day events, use noon to avoid timezone issues
+            startDate = new Date(year, month - 1, day, 12, 0, 0);
+            endDate = new Date(year, month - 1, day, 23, 59, 0);
+          } else {
+            const eventTime = event.time || event.event_time || '00:00';
+            const eventEndTime = event.endTime || event.end_time || eventTime;
+
+            const [startHour, startMinute] = eventTime.split(':').map(Number);
+            const [endHour, endMinute] = eventEndTime.split(':').map(Number);
+
+            startDate = new Date(year, month - 1, day, startHour, startMinute, 0);
+            endDate = new Date(year, month - 1, day, endHour, endMinute, 0);
+          }
+
+          // Validate dates before syncing
+          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            console.warn(`Invalid date for event: ${event.title}`);
+            continue;
+          }
+
+          await Calendar.createEventAsync(defaultCalendar.id, {
+            title: event.title,
+            notes: event.description,
+            location: event.location,
+            startDate,
+            endDate,
+            allDay: event.isAllDay || event.is_all_day,
+          });
+          syncCount++;
+        } catch (eventError) {
+          console.warn(`Failed to sync event "${event.title}":`, eventError);
+          // Continue with next event
+        }
       }
 
-      Alert.alert('Success', `Synced ${syncCount} events to your phone calendar`);
+      if (syncCount > 0) {
+        Alert.alert('Success', `Synced ${syncCount} event${syncCount > 1 ? 's' : ''} to your phone calendar`);
+      } else {
+        Alert.alert('No Events Synced', 'No events could be synced. Please check your events and try again.');
+      }
     } catch (error) {
       console.error('Sync error:', error);
       Alert.alert('Error', 'Failed to sync events');
@@ -995,10 +1032,16 @@ export default function CalendarScreen() {
   // Get event color based on type
   const getEventColor = (type?: string) => {
     switch (type) {
-      case 'date': return '#e91e63';
-      case 'anniversary': return '#9c27b0';
-      case 'reminder': return '#ff9800';
-      default: return '#8B2332';
+      case 'date': return '#e91e63';           // Pink - Date
+      case 'anniversary': return '#9c27b0';    // Purple - Anniversary
+      case 'reminder': return '#ff9800';       // Orange - Reminder
+      case 'work': return '#2196f3';           // Blue - Work
+      case 'exercise': return '#4caf50';       // Green - Exercise
+      case 'shopping': return '#ff5722';       // Deep Orange - Shopping
+      case 'travel': return '#00bcd4';         // Cyan - Travel
+      case 'study': return '#673ab7';          // Deep Purple - Study
+      case 'party': return '#ff4081';          // Pink Accent - Party
+      default: return '#8B2332';               // Maroon - Other
     }
   };
 
@@ -1080,50 +1123,62 @@ export default function CalendarScreen() {
               </TouchableOpacity>
               <Text style={styles.allDayHint}>
                 {isAllDay
-                  ? 'Uncheck to set specific start and end times'
-                  : 'Check to make this an all-day event'}
+                  ? 'Event will span the entire day without specific times'
+                  : 'Event will use the specific start and end times below'}
               </Text>
             </View>
 
-            {/* Time pickers (only if not all day) */}
-            {!isAllDay && (
-              <View style={styles.timeSection}>
-                <Text style={styles.timeSectionHint}>
-                  Select hour and minute for precise timing
-                </Text>
-                <TimePicker
-                  value={startTime}
-                  onChange={setStartTime}
-                  label="Start Time"
-                />
-                <TimePicker
-                  value={endTime}
-                  onChange={setEndTime}
-                  label="End Time"
-                />
-              </View>
-            )}
+            {/* Time pickers (always visible) */}
+            <View style={styles.timeSection}>
+              <Text style={styles.timeSectionHint}>
+                Select hour and minute for precise timing
+              </Text>
+              <TimePicker
+                value={startTime}
+                onChange={setStartTime}
+                label="Start Time"
+              />
+              <TimePicker
+                value={endTime}
+                onChange={setEndTime}
+                label="End Time"
+              />
+            </View>
 
             {/* Event Type */}
             <Text style={styles.inputLabel}>Event Type</Text>
             <View style={styles.eventTypeContainer}>
-              {(['date', 'anniversary', 'reminder', 'other'] as const).map(type => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.eventTypeButton,
-                    eventType === type && { backgroundColor: getEventColor(type) }
-                  ]}
-                  onPress={() => setEventType(type)}
-                >
-                  <Text style={[
-                    styles.eventTypeText,
-                    eventType === type && styles.eventTypeTextSelected
-                  ]}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {(['date', 'anniversary', 'reminder', 'work', 'exercise', 'shopping', 'travel', 'study', 'party', 'other'] as const).map(type => {
+                const typeLabels = {
+                  date: 'Date',
+                  anniversary: 'Anniversary',
+                  reminder: 'Reminder',
+                  work: 'Work',
+                  exercise: 'Exercise',
+                  shopping: 'Shopping',
+                  travel: 'Travel',
+                  study: 'Study',
+                  party: 'Party',
+                  other: 'Other'
+                };
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.eventTypeButton,
+                      eventType === type && { backgroundColor: getEventColor(type) }
+                    ]}
+                    onPress={() => setEventType(type)}
+                  >
+                    <Text style={[
+                      styles.eventTypeText,
+                      eventType === type && styles.eventTypeTextSelected
+                    ]}>
+                      {typeLabels[type]}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </ScrollView>
 
