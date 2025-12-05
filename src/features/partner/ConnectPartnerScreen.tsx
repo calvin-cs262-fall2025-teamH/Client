@@ -123,7 +123,7 @@ export function ConnectPartnerScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="link" size={24} color="#8B2332" />
-            <Text style={styles.cardTitle}>Enter Partner's Code</Text>
+            <Text style={styles.cardTitle}>Enter Partner&apos;s Code</Text>
           </View>
           <Text style={styles.cardSubtitle}>
             Ask your partner for their code and enter it below
