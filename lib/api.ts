@@ -17,6 +17,9 @@ import type {
   CreatePrayerRequest,
   UpdatePrayerRequest,
   TimelineActivity,
+  TodoItem,
+  CreateTodoRequest,
+  UpdateTodoRequest,
 } from "@/types/api";
 
 export const BASE =
@@ -310,6 +313,41 @@ export const api = {
 
   async togglePrayerAnswered(id: number) {
     return authHttp<PrayerItem>(`/api/prayers/${id}/toggle-answered`, {
+      method: "PUT",
+    });
+  },
+
+  // ============= To-Do APIs =============
+  async createTodo(data: CreateTodoRequest) {
+    return authHttp<TodoItem>("/api/todos", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getTodos() {
+    return authHttp<TodoItem[]>("/api/todos");
+  },
+
+  async getTodo(id: number) {
+    return authHttp<TodoItem>(`/api/todos/${id}`);
+  },
+
+  async updateTodo(id: number, data: UpdateTodoRequest) {
+    return authHttp<TodoItem>(`/api/todos/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteTodo(id: number) {
+    return authHttp<void>(`/api/todos/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  async toggleTodoCompleted(id: number) {
+    return authHttp<TodoItem>(`/api/todos/${id}/toggle-completed`, {
       method: "PUT",
     });
   },

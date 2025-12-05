@@ -31,6 +31,13 @@ export default function TabsLayout() {
           tabBarIcon: () => <Text style={{ fontSize: 24 }}>📸</Text>,
         }}
       />
+      <Tabs.Screen
+        name="../todo"
+        options={{
+          title: 'To-Do',
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>✓</Text>,
+        }}
+      />
     </Tabs>
   );
 }

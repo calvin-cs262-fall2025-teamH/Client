@@ -152,3 +152,25 @@ export interface TimelineActivity {
   createdAt: string;
   photos: Photo[];
 }
+
+// ============= To-Do Types =============
+export interface TodoItem {
+  id: number;
+  coupleId: number;
+  title: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  isCompleted: boolean;
+  completedAt?: string | null;
+}
+
+export interface CreateTodoRequest {
+  title: string;
+  description?: string;
+}
+
+export interface UpdateTodoRequest {
+  title?: string;
+  description?: string;
+}

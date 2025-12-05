@@ -88,8 +88,7 @@ export function HomeScreen() {
       icon: 'checkmark-circle-outline' as const,
       color: '#C026D3',
       gradient: ['#F5E5FA', '#EBD1F0'],
-      action: () => Alert.alert('Coming Soon', 'We are still building the shared to-do list experience. Stay tuned!'),
-      disabled: true,
+      action: () => router.push('/todo'),
     },
   ]), []);
 
