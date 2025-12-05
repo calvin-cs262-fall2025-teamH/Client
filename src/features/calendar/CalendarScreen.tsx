@@ -583,7 +583,7 @@ export default function CalendarScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={theme.primary} />
+            <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Calendar</Text>
           <View style={styles.headerActions}>
@@ -591,7 +591,7 @@ export default function CalendarScreen() {
               <Text style={styles.todayButtonText}>Today</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={syncToPhoneCalendar} style={styles.syncButton}>
-              <Ionicons name="sync" size={20} color={theme.primary} />
+              <Ionicons name="sync" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -603,6 +603,7 @@ export default function CalendarScreen() {
               key={mode}
               style={[styles.viewModeButton, viewMode === mode && styles.viewModeButtonActive]}
               onPress={() => setViewMode(mode)}
+              activeOpacity={0.7}
             >
               <Text style={[styles.viewModeText, viewMode === mode && styles.viewModeTextActive]}>
                 {mode.charAt(0).toUpperCase() + mode.slice(1)}
@@ -621,7 +622,7 @@ export default function CalendarScreen() {
             }}
             style={styles.navButton}
           >
-            <Ionicons name="chevron-back" size={24} color={theme.primary} />
+            <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
 
           <Text style={styles.navTitle}>
@@ -639,7 +640,7 @@ export default function CalendarScreen() {
             }}
             style={styles.navButton}
           >
-            <Ionicons name="chevron-forward" size={24} color={theme.primary} />
+            <Ionicons name="chevron-forward" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -751,17 +752,18 @@ export default function CalendarScreen() {
               const isAllDay = event.isAllDay || event.is_all_day;
               const eventTime = event.time || event.event_time;
               const eventEndTime = event.endTime || event.end_time;
+              const eventColor = getEventColor(event.eventType || event.event_type);
               return (
                 <TouchableOpacity
                   key={event.id}
-                  style={styles.monthEventItem}
+                  style={[styles.monthEventItem, { borderLeftColor: eventColor }]}
                   onPress={() => openEditEventModal(event)}
+                  activeOpacity={0.7}
                 >
                   <View style={styles.monthEventDate}>
                     <Text style={styles.monthEventDay}>{dayOfWeek}</Text>
                     <Text style={styles.monthEventDayNum}>{dayNum}</Text>
                   </View>
-                  <View style={[styles.monthEventColor, { backgroundColor: getEventColor(event.eventType || event.event_type) }]} />
                   <View style={styles.monthEventInfo}>
                     <Text style={styles.monthEventTitle}>{event.title}</Text>
                     <Text style={styles.monthEventTime}>
@@ -771,7 +773,7 @@ export default function CalendarScreen() {
                       <Text style={styles.monthEventLocation}>📍 {event.location}</Text>
                     )}
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                  <Ionicons name="chevron-forward" size={20} color="#bdc3c7" />
                 </TouchableOpacity>
               );
             })
@@ -1238,7 +1240,7 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8e5e8',
+    backgroundColor: '#fafafa',
   },
   loadingContainer: {
     flex: 1,
@@ -1246,11 +1248,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f5c8d2',
+    backgroundColor: '#8B2332',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
   },
   headerTop: {
     flexDirection: 'row',
@@ -1262,9 +1270,10 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#8B2332',
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   headerActions: {
     flexDirection: 'row',
@@ -1272,40 +1281,49 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   todayButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#f8e5e8',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   todayButtonText: {
-    color: '#8B2332',
-    fontWeight: '500',
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 13,
   },
   syncButton: {
     padding: 4,
   },
   viewModeContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f8e5e8',
-    borderRadius: 8,
-    padding: 4,
-    marginBottom: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 16,
+    marginTop: 12,
   },
   viewModeButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: 6,
+    borderRadius: 10,
   },
   viewModeButtonActive: {
-    backgroundColor: '#8B2332',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   viewModeText: {
-    color: '#8B2332',
+    color: 'rgba(255, 255, 255, 0.8)',
     fontWeight: '500',
+    fontSize: 14,
   },
   viewModeTextActive: {
-    color: '#fff',
+    color: '#8B2332',
+    fontWeight: '700',
   },
   navigation: {
     flexDirection: 'row',
@@ -1316,9 +1334,9 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   navTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#333',
+    color: '#fff',
     flex: 1,
     textAlign: 'center',
   },
@@ -1330,9 +1348,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   monthContainer: {
-    padding: 16,
+    padding: 20,
     backgroundColor: '#fff',
-    marginBottom: 8,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   weekDaysRow: {
     flexDirection: 'row',
@@ -1354,47 +1380,62 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 8,
-    marginVertical: 2,
+    padding: 4,
   },
   todayCell: {
-    backgroundColor: 'rgba(139, 35, 50, 0.1)',
+    backgroundColor: 'transparent',
   },
   selectedCell: {
-    backgroundColor: '#8B2332',
+    backgroundColor: 'transparent',
   },
   dayNumber: {
     fontSize: 16,
     color: '#333',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    textAlign: 'center',
+    lineHeight: 36,
   },
   todayText: {
-    fontWeight: '600',
-    color: '#8B2332',
+    fontWeight: '700',
+    color: '#fff',
+    backgroundColor: '#FF6B9D',
   },
   selectedText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
+    backgroundColor: '#8B2332',
   },
   eventDotsContainer: {
     flexDirection: 'row',
-    marginTop: 4,
-    gap: 2,
+    position: 'absolute',
+    bottom: 6,
+    gap: 3,
   },
   eventDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   // Month events list styles
   monthEventsContainer: {
     backgroundColor: '#fff',
-    padding: 16,
+    padding: 20,
+    marginHorizontal: 16,
+    marginTop: 12,
     marginBottom: 80,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   monthEventsTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#2c3e50',
     marginBottom: 16,
   },
   noEventsContainer: {
@@ -1414,45 +1455,50 @@ const styles = StyleSheet.create({
   monthEventItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f5c8d2',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    backgroundColor: '#fafafa',
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#8B2332',
   },
   monthEventDate: {
-    width: 45,
+    width: 50,
     alignItems: 'center',
   },
   monthEventDay: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 11,
+    color: '#7f8c8d',
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
   monthEventDayNum: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#2c3e50',
   },
   monthEventColor: {
-    width: 4,
-    height: 40,
-    borderRadius: 2,
-    marginHorizontal: 12,
+    width: 0,
+    height: 0,
   },
   monthEventInfo: {
     flex: 1,
+    marginLeft: 12,
   },
   monthEventTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: '600',
+    color: '#2c3e50',
   },
   monthEventTime: {
     fontSize: 13,
-    color: '#666',
-    marginTop: 2,
+    color: '#7f8c8d',
+    marginTop: 4,
   },
   monthEventLocation: {
     fontSize: 12,
-    color: '#888',
+    color: '#95a5a6',
     marginTop: 2,
   },
   // Week view styles
@@ -1692,19 +1738,19 @@ const styles = StyleSheet.create({
   // FAB
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    right: 24,
+    bottom: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#8B2332',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    elevation: 8,
+    shadowColor: '#8B2332',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
   },
   // Modal styles
   modalOverlay: {
