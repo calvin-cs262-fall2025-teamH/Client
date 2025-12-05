@@ -72,7 +72,7 @@ export function MemoriesTimelineScreen() {
 
       const picker = await ImagePicker.launchImageLibraryAsync({
         allowsMultipleSelection: false,
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         quality: 0.8,
         base64: true,
       });
