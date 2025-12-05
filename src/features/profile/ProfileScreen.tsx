@@ -160,10 +160,6 @@ export function ProfileScreen() {
               {saving ? 'Saving...' : 'Save Profile'}
             </ThemedText>
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ThemedText style={styles.backButtonText}>Back</ThemedText>
-          </TouchableOpacity>
         </ThemedView>
       </ScrollView>
     </SafeAreaView>
