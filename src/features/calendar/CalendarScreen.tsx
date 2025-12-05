@@ -49,7 +49,7 @@ export default function CalendarScreen() {
   const [isAllDay, setIsAllDay] = useState(true);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
-  const [eventType, setEventType] = useState<'date' | 'anniversary' | 'reminder' | 'other'>('other');
+  const [eventType, setEventType] = useState<'date' | 'anniversary' | 'reminder' | 'work' | 'exercise' | 'shopping' | 'travel' | 'study' | 'party' | 'other'>('other');
 
   // Date picker state for event modal
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -241,7 +241,6 @@ export default function CalendarScreen() {
     setEndTime(event.endTime || '10:00');
     setEventType((event.eventType as string) || 'other');
     setShowEventModal(true);
-    setShowEventList(false);
   };
 
   // Save event
@@ -995,10 +994,16 @@ export default function CalendarScreen() {
   // Get event color based on type
   const getEventColor = (type?: string) => {
     switch (type) {
-      case 'date': return '#e91e63';
-      case 'anniversary': return '#9c27b0';
-      case 'reminder': return '#ff9800';
-      default: return '#8B2332';
+      case 'date': return '#e91e63';           // Pink - Date
+      case 'anniversary': return '#9c27b0';    // Purple - Anniversary
+      case 'reminder': return '#ff9800';       // Orange - Reminder
+      case 'work': return '#2196f3';           // Blue - Work
+      case 'exercise': return '#4caf50';       // Green - Exercise
+      case 'shopping': return '#ff5722';       // Deep Orange - Shopping
+      case 'travel': return '#00bcd4';         // Cyan - Travel
+      case 'study': return '#673ab7';          // Deep Purple - Study
+      case 'party': return '#ff4081';          // Pink Accent - Party
+      default: return '#8B2332';               // Maroon - Other
     }
   };
 
@@ -1080,50 +1085,62 @@ export default function CalendarScreen() {
               </TouchableOpacity>
               <Text style={styles.allDayHint}>
                 {isAllDay
-                  ? 'Uncheck to set specific start and end times'
-                  : 'Check to make this an all-day event'}
+                  ? 'Event will span the entire day without specific times'
+                  : 'Event will use the specific start and end times below'}
               </Text>
             </View>
 
-            {/* Time pickers (only if not all day) */}
-            {!isAllDay && (
-              <View style={styles.timeSection}>
-                <Text style={styles.timeSectionHint}>
-                  Select hour and minute for precise timing
-                </Text>
-                <TimePicker
-                  value={startTime}
-                  onChange={setStartTime}
-                  label="Start Time"
-                />
-                <TimePicker
-                  value={endTime}
-                  onChange={setEndTime}
-                  label="End Time"
-                />
-              </View>
-            )}
+            {/* Time pickers (always visible) */}
+            <View style={styles.timeSection}>
+              <Text style={styles.timeSectionHint}>
+                Select hour and minute for precise timing
+              </Text>
+              <TimePicker
+                value={startTime}
+                onChange={setStartTime}
+                label="Start Time"
+              />
+              <TimePicker
+                value={endTime}
+                onChange={setEndTime}
+                label="End Time"
+              />
+            </View>
 
             {/* Event Type */}
             <Text style={styles.inputLabel}>Event Type</Text>
             <View style={styles.eventTypeContainer}>
-              {(['date', 'anniversary', 'reminder', 'other'] as const).map(type => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.eventTypeButton,
-                    eventType === type && { backgroundColor: getEventColor(type) }
-                  ]}
-                  onPress={() => setEventType(type)}
-                >
-                  <Text style={[
-                    styles.eventTypeText,
-                    eventType === type && styles.eventTypeTextSelected
-                  ]}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {(['date', 'anniversary', 'reminder', 'work', 'exercise', 'shopping', 'travel', 'study', 'party', 'other'] as const).map(type => {
+                const typeLabels = {
+                  date: 'Date',
+                  anniversary: 'Anniversary',
+                  reminder: 'Reminder',
+                  work: 'Work',
+                  exercise: 'Exercise',
+                  shopping: 'Shopping',
+                  travel: 'Travel',
+                  study: 'Study',
+                  party: 'Party',
+                  other: 'Other'
+                };
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.eventTypeButton,
+                      eventType === type && { backgroundColor: getEventColor(type) }
+                    ]}
+                    onPress={() => setEventType(type)}
+                  >
+                    <Text style={[
+                      styles.eventTypeText,
+                      eventType === type && styles.eventTypeTextSelected
+                    ]}>
+                      {typeLabels[type]}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </ScrollView>
 
