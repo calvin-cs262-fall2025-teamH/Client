@@ -112,10 +112,6 @@ export function ConnectPartnerScreen() {
           <ThemedText style={styles.buttonText}>Connect</ThemedText>
         </TouchableOpacity>
       </View>
-
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()} disabled={loading}>
-        <ThemedText style={styles.backButtonText}>Back</ThemedText>
-      </TouchableOpacity>
     </ThemedView>
   );
 }
