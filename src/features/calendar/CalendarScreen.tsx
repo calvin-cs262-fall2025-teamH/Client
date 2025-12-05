@@ -329,21 +329,59 @@ export default function CalendarScreen() {
 
       let syncCount = 0;
       for (const event of events) {
-        const startDate = new Date(`${event.date}T${event.time || '00:00'}:00`);
-        const endDate = new Date(`${event.date}T${event.endTime || event.time || '23:59'}:00`);
+        try {
+          // Normalize the date string from API
+          const eventDate = normalizeDate(event.date || event.event_date || '');
+          if (!eventDate) continue;
 
-        await Calendar.createEventAsync(defaultCalendar.id, {
-          title: event.title,
-          notes: event.description,
-          location: event.location,
-          startDate,
-          endDate,
-          allDay: event.isAllDay,
-        });
-        syncCount++;
+          // Parse date parts
+          const [year, month, day] = eventDate.split('-').map(Number);
+
+          // Create date objects with proper timezone handling
+          let startDate: Date;
+          let endDate: Date;
+
+          if (event.isAllDay || event.is_all_day) {
+            // For all-day events, use noon to avoid timezone issues
+            startDate = new Date(year, month - 1, day, 12, 0, 0);
+            endDate = new Date(year, month - 1, day, 23, 59, 0);
+          } else {
+            const eventTime = event.time || event.event_time || '00:00';
+            const eventEndTime = event.endTime || event.end_time || eventTime;
+
+            const [startHour, startMinute] = eventTime.split(':').map(Number);
+            const [endHour, endMinute] = eventEndTime.split(':').map(Number);
+
+            startDate = new Date(year, month - 1, day, startHour, startMinute, 0);
+            endDate = new Date(year, month - 1, day, endHour, endMinute, 0);
+          }
+
+          // Validate dates before syncing
+          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            console.warn(`Invalid date for event: ${event.title}`);
+            continue;
+          }
+
+          await Calendar.createEventAsync(defaultCalendar.id, {
+            title: event.title,
+            notes: event.description,
+            location: event.location,
+            startDate,
+            endDate,
+            allDay: event.isAllDay || event.is_all_day,
+          });
+          syncCount++;
+        } catch (eventError) {
+          console.warn(`Failed to sync event "${event.title}":`, eventError);
+          // Continue with next event
+        }
       }
 
-      Alert.alert('Success', `Synced ${syncCount} events to your phone calendar`);
+      if (syncCount > 0) {
+        Alert.alert('Success', `Synced ${syncCount} event${syncCount > 1 ? 's' : ''} to your phone calendar`);
+      } else {
+        Alert.alert('No Events Synced', 'No events could be synced. Please check your events and try again.');
+      }
     } catch (error) {
       console.error('Sync error:', error);
       Alert.alert('Error', 'Failed to sync events');
