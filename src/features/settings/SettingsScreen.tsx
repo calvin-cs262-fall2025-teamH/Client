@@ -1,6 +1,7 @@
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import { usePartner } from '@/contexts/PartnerContext';
+import { ThemedBackground } from '@/components/ThemedBackground';
 
 export function SettingsScreen() {
   const { hasPartner, unmatchPartner } = usePartner();
@@ -46,8 +47,9 @@ export function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <ThemedBackground>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerText}>⚙️ Settings</Text>
         </View>
@@ -58,6 +60,11 @@ export function SettingsScreen() {
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/profile')}>
             <Text style={styles.menuIcon}>👤</Text>
             <Text style={styles.menuText}>Edit Profile</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/background-settings')}>
+            <Text style={styles.menuIcon}>🎨</Text>
+            <Text style={styles.menuText}>Change Background</Text>
           </TouchableOpacity>
 
           {hasPartner && (
@@ -96,14 +103,14 @@ export function SettingsScreen() {
           <Text style={styles.footerSubtext}>Stay connected with your partner ❤️</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ThemedBackground>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f8e5e8',
   },
   container: {
     flexGrow: 1,

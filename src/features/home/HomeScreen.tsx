@@ -4,6 +4,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIn
 import { Ionicons } from '@expo/vector-icons';
 import { usePartner } from '@/contexts/PartnerContext';
 import { api } from '@/lib/api';
+import { ThemedBackground } from '@/components/ThemedBackground';
 
 export function HomeScreen() {
   const [selectedEmoji, setSelectedEmoji] = useState('😭');
@@ -94,17 +95,18 @@ export function HomeScreen() {
   ]), []);
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={['#8B2332']}
-          tintColor="#8B2332"
-        />
-      }
-    >
+    <ThemedBackground>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#8B2332']}
+            tintColor="#8B2332"
+          />
+        }
+      >
       <View style={styles.header}>
         <Text style={styles.appName}>CoupleBond</Text>
         <Text style={styles.tagline}>Stay connected with your partner ❤️</Text>
@@ -205,12 +207,13 @@ export function HomeScreen() {
           </TouchableOpacity>
         ))}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </ThemedBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#f8e5e8' },
+  container: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: {
     alignItems: 'center',
     marginBottom: 32,
