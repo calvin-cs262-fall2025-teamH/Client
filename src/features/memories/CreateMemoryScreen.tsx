@@ -11,6 +11,7 @@ import {
   View,
   SafeAreaView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export function CreateMemoryScreen() {
   const [title, setTitle] = useState('');
@@ -49,58 +50,71 @@ export function CreateMemoryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Memory</Text>
-          <View style={styles.placeholder} />
-        </View>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>New Memory</Text>
+        <View style={styles.headerPlaceholder} />
+      </View>
 
-        <View style={styles.form}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+
+        <View style={styles.formCard}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Title *</Text>
+            <View style={styles.labelRow}>
+              <Ionicons name="star" size={16} color="#8B2332" />
+              <Text style={styles.label}>Title *</Text>
+            </View>
             <TextInput
               style={styles.input}
               value={title}
               onChangeText={setTitle}
               placeholder="e.g., First Date, Anniversary Dinner"
-              placeholderTextColor="#999"
+              placeholderTextColor="#95a5a6"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Date *</Text>
+            <View style={styles.labelRow}>
+              <Ionicons name="calendar" size={16} color="#8B2332" />
+              <Text style={styles.label}>Date *</Text>
+            </View>
             <TextInput
               style={styles.input}
               value={date}
               onChangeText={setDate}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor="#999"
+              placeholderTextColor="#95a5a6"
             />
             <Text style={styles.hint}>Format: YYYY-MM-DD</Text>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Location</Text>
+            <View style={styles.labelRow}>
+              <Ionicons name="location" size={16} color="#8B2332" />
+              <Text style={styles.label}>Location</Text>
+            </View>
             <TextInput
               style={styles.input}
               value={location}
               onChangeText={setLocation}
               placeholder="e.g., Central Park, Paris"
-              placeholderTextColor="#999"
+              placeholderTextColor="#95a5a6"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description</Text>
+            <View style={styles.labelRow}>
+              <Ionicons name="document-text" size={16} color="#8B2332" />
+              <Text style={styles.label}>Description</Text>
+            </View>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={description}
               onChangeText={setDescription}
               placeholder="Tell the story of this memory..."
-              placeholderTextColor="#999"
+              placeholderTextColor="#95a5a6"
               multiline
               numberOfLines={6}
               textAlignVertical="top"
@@ -111,15 +125,20 @@ export function CreateMemoryScreen() {
             style={[styles.createButton, loading && styles.createButtonDisabled]}
             onPress={handleCreate}
             disabled={loading}
+            activeOpacity={0.8}
           >
+            <Ionicons name="checkmark-circle" size={20} color="#fff" />
             <Text style={styles.createButtonText}>
               {loading ? 'Creating...' : 'Create Memory'}
             </Text>
           </TouchableOpacity>
 
-          <Text style={styles.note}>
-            You can add photos to this memory after creating it.
-          </Text>
+          <View style={styles.noteContainer}>
+            <Ionicons name="information-circle-outline" size={16} color="#7f8c8d" />
+            <Text style={styles.note}>
+              You can add photos to this memory after creating it.
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -129,93 +148,122 @@ export function CreateMemoryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f8e5e8',
+    backgroundColor: '#fafafa',
+  },
+  header: {
+    backgroundColor: '#8B2332',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  headerPlaceholder: {
+    width: 40,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f8e5e8',
   },
   content: {
+    padding: 20,
     paddingBottom: 40,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#8B2332',
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#8B2332',
-  },
-  placeholder: {
-    width: 60,
-  },
-  form: {
-    padding: 20,
+  formCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   inputGroup: {
-    marginBottom: 24,
+    marginBottom: 20,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+    color: '#2c3e50',
   },
   input: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#fafafa',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     fontSize: 16,
-    color: '#333',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    color: '#2c3e50',
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
   },
   textArea: {
     minHeight: 120,
-    paddingTop: 16,
+    paddingTop: 14,
   },
   hint: {
     fontSize: 12,
-    color: '#999',
+    color: '#7f8c8d',
     marginTop: 6,
+    marginLeft: 4,
   },
   createButton: {
     backgroundColor: '#8B2332',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 25,
-    alignItems: 'center',
+    borderRadius: 12,
     shadowColor: '#8B2332',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
     marginTop: 8,
   },
   createButtonDisabled: {
     opacity: 0.6,
   },
   createButtonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  noteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
   },
   note: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    marginTop: 16,
-    fontStyle: 'italic',
+    flex: 1,
+    fontSize: 13,
+    color: '#7f8c8d',
   },
 });

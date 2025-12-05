@@ -1,6 +1,7 @@
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import { usePartner } from '@/contexts/PartnerContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export function SettingsScreen() {
   const { hasPartner, unmatchPartner } = usePartner();
@@ -47,30 +48,42 @@ export function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <View style={styles.headerPlaceholder} />
+        <Text style={styles.headerTitle}>Settings</Text>
+        <View style={styles.headerPlaceholder} />
+      </View>
+
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>⚙️ Settings</Text>
-        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/profile')}>
-            <Text style={styles.menuIcon}>👤</Text>
+            <View style={styles.iconCircle}>
+              <Ionicons name="person-outline" size={20} color="#8B2332" />
+            </View>
             <Text style={styles.menuText}>Edit Profile</Text>
+            <Ionicons name="chevron-forward" size={20} color="#95a5a6" />
           </TouchableOpacity>
 
           {hasPartner && (
             <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/partner-info')}>
-              <Text style={styles.menuIcon}>ℹ️</Text>
+              <View style={styles.iconCircle}>
+                <Ionicons name="information-circle-outline" size={20} color="#8B2332" />
+              </View>
               <Text style={styles.menuText}>Partner Info</Text>
+              <Ionicons name="chevron-forward" size={20} color="#95a5a6" />
             </TouchableOpacity>
           )}
 
           {hasPartner && (
             <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/connect-partner')}>
-              <Text style={styles.menuIcon}>💑</Text>
+              <View style={styles.iconCircle}>
+                <Ionicons name="heart-outline" size={20} color="#8B2332" />
+              </View>
               <Text style={styles.menuText}>Start a Relationship</Text>
+              <Ionicons name="chevron-forward" size={20} color="#95a5a6" />
             </TouchableOpacity>
           )}
         </View>
@@ -80,14 +93,20 @@ export function SettingsScreen() {
 
           {hasPartner && (
             <TouchableOpacity style={styles.dangerMenuItem} onPress={handleUnmatch}>
-              <Text style={styles.menuIcon}>💔</Text>
+              <View style={styles.dangerIconCircle}>
+                <Ionicons name="heart-dislike-outline" size={20} color="#dc2626" />
+              </View>
               <Text style={styles.dangerText}>Unmatch with Partner</Text>
+              <Ionicons name="chevron-forward" size={20} color="#dc2626" />
             </TouchableOpacity>
           )}
 
           <TouchableOpacity style={styles.dangerMenuItem} onPress={handleDeleteAccount}>
-            <Text style={styles.menuIcon}>🗑️</Text>
+            <View style={styles.dangerIconCircle}>
+              <Ionicons name="trash-outline" size={20} color="#dc2626" />
+            </View>
             <Text style={styles.dangerText}>Delete Account</Text>
+            <Ionicons name="chevron-forward" size={20} color="#dc2626" />
           </TouchableOpacity>
         </View>
 
@@ -103,67 +122,100 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f8e5e8',
+    backgroundColor: '#fafafa',
+  },
+  header: {
+    backgroundColor: '#8B2332',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  headerPlaceholder: {
+    width: 40,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   container: {
     flexGrow: 1,
     padding: 20,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-    paddingVertical: 20,
-  },
-  headerText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#8B2332',
-  },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#8B2332',
-    marginBottom: 12,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2c3e50',
+    marginBottom: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
+    backgroundColor: '#fafafa',
+    marginBottom: 10,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#f8e5e8',
-    marginBottom: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  menuText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#2c3e50',
   },
   dangerMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: '#fee2e2',
-    borderWidth: 1,
-    borderColor: '#ef4444',
-    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: '#fca5a5',
+    marginBottom: 10,
   },
-  menuIcon: {
-    fontSize: 24,
+  dangerIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  menuText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#8B2332',
-  },
   dangerText: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '600',
     color: '#dc2626',
@@ -171,16 +223,16 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 'auto',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 30,
   },
   footerText: {
     fontSize: 14,
-    color: '#666',
+    color: '#7f8c8d',
     marginBottom: 4,
+    fontWeight: '600',
   },
   footerSubtext: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
+    fontSize: 13,
+    color: '#95a5a6',
   },
 });
