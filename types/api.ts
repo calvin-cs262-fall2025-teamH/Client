@@ -120,6 +120,37 @@ export interface Anniversary {
   nextYearAnniversary: string;
 }
 
+// ============= Anniversary Reminder Types =============
+export interface AnniversaryReminder {
+  id: number;
+  coupleId: number;
+  title: string;
+  description?: string;
+  anniversaryDate: string;
+  reminderDaysBefore: number;
+  isRecurring: boolean;
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAnniversaryReminderRequest {
+  title: string;
+  description?: string;
+  anniversaryDate: string;
+  reminderDaysBefore: number;
+  isRecurring?: boolean;
+}
+
+export interface UpdateAnniversaryReminderRequest {
+  title?: string;
+  description?: string;
+  anniversaryDate?: string;
+  reminderDaysBefore?: number;
+  isRecurring?: boolean;
+  isEnabled?: boolean;
+}
+
 // ============= Prayer Types =============
 export interface PrayerItem {
   id: number;
