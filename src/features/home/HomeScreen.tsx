@@ -79,8 +79,8 @@ export function HomeScreen() {
       icon: 'gift-outline' as const,
       color: '#D946A6',
       gradient: ['#FAE8F5', '#F3D4EB'],
-      action: () => Alert.alert('Coming Soon', 'We are still building the anniversary reminders feature. Stay tuned!'),
-      disabled: true,
+      action: () => router.push('/anniversary-reminders'),
+      disabled: false,
     },
     {
       title: 'To-Do List',
