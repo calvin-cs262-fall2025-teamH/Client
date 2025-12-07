@@ -1,26 +1,29 @@
 // Client/lib/api.ts
-import * as SecureStore from "expo-secure-store";
 import type {
-  ApiResponse,
-  AuthResponse,
-  Couple,
-  CreateCoupleResponse,
   Activity,
   ActivityWithPhotos,
-  CreateActivityRequest,
   AddPhotoRequest,
-  Photo,
-  CalendarEvent,
-  CreateCalendarEventRequest,
   Anniversary,
-  PrayerItem,
+  AnniversaryReminder,
+  ApiResponse,
+  AuthResponse,
+  CalendarEvent,
+  Couple,
+  CreateActivityRequest,
+  CreateAnniversaryReminderRequest,
+  CreateCalendarEventRequest,
+  CreateCoupleResponse,
   CreatePrayerRequest,
-  UpdatePrayerRequest,
+  Photo,
+  PrayerItem,
   TimelineActivity,
+  UpdateAnniversaryReminderRequest,
+  UpdatePrayerRequest,
 } from "@/types/api";
+import * as SecureStore from "expo-secure-store";
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.85.18:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://10.25.12.228:4000";
 
 console.log('[api] BASE URL configured as:', BASE);
 
@@ -310,6 +313,45 @@ export const api = {
 
   async togglePrayerAnswered(id: number) {
     return authHttp<PrayerItem>(`/api/prayers/${id}/toggle-answered`, {
+      method: "PUT",
+    });
+  },
+
+  // ============= Anniversary Reminder APIs =============
+  async createAnniversaryReminder(data: CreateAnniversaryReminderRequest) {
+    return authHttp<AnniversaryReminder>("/api/anniversary-reminders", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getAnniversaryReminders() {
+    return authHttp<AnniversaryReminder[]>("/api/anniversary-reminders");
+  },
+
+  async getUpcomingAnniversaryReminders() {
+    return authHttp<AnniversaryReminder[]>("/api/anniversary-reminders/upcoming");
+  },
+
+  async getAnniversaryReminder(id: number) {
+    return authHttp<AnniversaryReminder>(`/api/anniversary-reminders/${id}`);
+  },
+
+  async updateAnniversaryReminder(id: number, data: UpdateAnniversaryReminderRequest) {
+    return authHttp<AnniversaryReminder>(`/api/anniversary-reminders/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteAnniversaryReminder(id: number) {
+    return authHttp<void>(`/api/anniversary-reminders/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  async toggleAnniversaryReminderEnabled(id: number) {
+    return authHttp<AnniversaryReminder>(`/api/anniversary-reminders/${id}/toggle`, {
       method: "PUT",
     });
   },
