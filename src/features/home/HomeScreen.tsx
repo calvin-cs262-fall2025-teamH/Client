@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePartner } from '@/contexts/PartnerContext';
 import { api } from '@/lib/api';
@@ -80,18 +80,18 @@ export function HomeScreen() {
       icon: 'gift-outline' as const,
       color: '#D946A6',
       gradient: ['#FAE8F5', '#F3D4EB'],
-      action: () => Alert.alert('Coming Soon', 'We are still building the anniversary reminders feature. Stay tuned!'),
-      disabled: true,
+      action: () => router.push('/anniversary-reminders'),
+      disabled: false,
     },
     {
-      title: 'To-Do List',
-      subtitle: 'Accomplish goals together',
-      icon: 'checkmark-circle-outline' as const,
+      title: 'Daily Bread',
+      subtitle: 'Grow in faith together',
+      icon: 'book-outline' as const,
       color: '#C026D3',
       gradient: ['#F5E5FA', '#EBD1F0'],
-      action: () => Alert.alert('Coming Soon', 'We are still building the shared to-do list experience. Stay tuned!'),
-      disabled: true,
+      action: () => router.push('/devotional'),
     },
+
   ]), []);
 
   return (
@@ -117,80 +117,97 @@ export function HomeScreen() {
           <ActivityIndicator size="large" color="#8B2332" />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
-      )}
-
-      <View style={styles.profileRow}>
-        <TouchableOpacity style={styles.profileCard} onPress={() => router.push('/profile')}>
-          <Text style={styles.profileText}>{userName || 'Your Profile'}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => setShowEmojiPicker(!showEmojiPicker)}>
-          <Text style={{ fontSize: 32 }}>{selectedEmoji}</Text>
-        </TouchableOpacity>
-
-        {hasPartner && partner ? (
-          <TouchableOpacity
-            style={[styles.profileCard, styles.partnerCard]}
-            onPress={() => router.push('/partner-info')}
-          >
-            <Text style={styles.partnerEmoji}>{partnerEmoji}</Text>
-            <Text style={styles.profileText}>{partner.name || partner.email}</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.connectCard} onPress={() => router.push('/connect-partner')}>
-            <Text style={styles.connectText}>+ Connect Partner</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
-      {showEmojiPicker && (
-        <View style={styles.emojiPicker}>
-          <Text style={styles.emojiPickerTitle}>Choose an emoji:</Text>
-          <View style={styles.emojiGrid}>
-            {emojis.map((emoji, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.emojiButton}
-                onPress={async () => {
-                  // 本地立即更新UI
-                  setSelectedEmoji(emoji);
-                  setShowEmojiPicker(false);
-                  // 异步保存到后台
-                  try {
-                    await api.updateProfile({ emoji });
-                  } catch {
-                    // Silently handle error
-                  }
-                }}
-              >
-                <Text style={styles.emojiText}>{emoji}</Text>
-              </TouchableOpacity>
-            ))}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#8B2332']}
+            tintColor="#8B2332"
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8B2332" />
+            <Text style={styles.loadingText}>Loading...</Text>
           </View>
-        </View>
-      )}
+        )}
 
-      <View style={styles.featuresGrid}>
-        {featureCards.map((card) => (
+        {/* Modern profile cards */}
+        <View style={styles.profileSection}>
           <TouchableOpacity
-            key={card.title}
-            style={[
-              styles.featureBtn,
-              card.disabled && styles.featureBtnDisabled
-            ]}
-            onPress={card.action}
-            disabled={card.disabled}
-            activeOpacity={0.7}
+            style={styles.modernProfileCard}
+            onPress={() => router.push('/profile')}
+            activeOpacity={0.8}
           >
-            <View style={[
-              styles.featureIconContainer,
-              { backgroundColor: card.gradient[0] }
-            ]}>
-              <Ionicons
-                name={card.icon}
-                size={32}
-                color={card.disabled ? '#999' : card.color}
-              />
+            <View style={styles.profileAvatar}>
+              <TouchableOpacity onPress={() => setShowEmojiPicker(!showEmojiPicker)}>
+                <Text style={styles.emojiLarge}>{selectedEmoji}</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.profileName}>{userName || 'Your Profile'}</Text>
+            <Text style={styles.profileLabel}>You</Text>
+          </TouchableOpacity>
+
+          <View style={styles.connectionLine}>
+            <View style={styles.heartIcon}>
+              <Ionicons name="heart" size={20} color="#FF6B9D" />
+            </View>
+          </View>
+
+          {hasPartner && partner ? (
+            <TouchableOpacity
+              style={styles.modernProfileCard}
+              onPress={() => router.push('/partner-info')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.profileAvatar}>
+                <Text style={styles.emojiLarge}>{partnerEmoji}</Text>
+              </View>
+              <Text style={styles.profileName}>{partner.name || partner.email}</Text>
+              <Text style={styles.profileLabel}>Partner</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.modernConnectCard}
+              onPress={() => router.push('/connect-partner')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="person-add" size={32} color="#8B2332" />
+              <Text style={styles.connectLabel}>Connect Partner</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Emoji picker modal */}
+        {showEmojiPicker && (
+          <View style={styles.emojiPicker}>
+            <Text style={styles.emojiPickerTitle}>How are you feeling?</Text>
+            <View style={styles.emojiGrid}>
+              {emojis.map((emoji, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.emojiButton}
+                  onPress={async () => {
+                    setSelectedEmoji(emoji);
+                    setShowEmojiPicker(false);
+                    try {
+                      await api.updateProfile({ emoji });
+                    } catch {
+                      // Silently handle error
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.emojiText}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
             <Text style={[
               styles.featureTitle,
@@ -216,128 +233,250 @@ const styles = StyleSheet.create({
   container: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
-    paddingVertical: 20,
+    marginBottom: 10,
+  },
+  headerPlaceholder: {
+    width: 40,
+  },
+  headerContent: {
+    alignItems: 'center',
+    flex: 1,
   },
   appName: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#8B2332',
-    marginBottom: 8,
-    textShadowColor: 'rgba(139, 35, 50, 0.1)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   tagline: {
-    fontSize: 16,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 6,
+    fontWeight: '400',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
     color: '#666',
-    fontWeight: '500',
-    fontStyle: 'italic',
+    fontSize: 15,
   },
-  loadingContainer: { alignItems: 'center', marginBottom: 20 },
-  loadingText: { marginTop: 8, fontSize: 14, color: '#6b7280' },
-  profileRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-  profileCard: {
-    padding: 16,
-    borderWidth: 2,
-    borderColor: '#8B2332',
-    borderRadius: 12,
-    marginHorizontal: 8,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    minWidth: 120,
-    minHeight: 64,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileText: { fontSize: 16, fontWeight: '600', color: '#8B2332' },
-  connectCard: {
-    padding: 16,
-    borderWidth: 2,
-    borderColor: '#8B2332',
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    marginHorizontal: 8,
-    backgroundColor: '#f8e5e8',
-  },
-  connectText: { fontSize: 16, fontWeight: '600', color: '#8B2332' },
-  featuresGrid: {
-    width: '100%',
+  profileSection: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    paddingBottom: 20,
   },
-  featureBtn: {
-    width: '47%',
-    padding: 20,
-    borderRadius: 20,
+  modernProfileCard: {
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#f5c8d2',
+    borderRadius: 20,
+    padding: 20,
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#8B2332',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    minHeight: 160,
-  },
-  featureBtnDisabled: {
-    opacity: 0.5,
-    backgroundColor: '#f5f5f5',
-    borderColor: '#e0e0e0',
-  },
-  featureIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
+    width: '40%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  profileAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f8e5e8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  emojiLarge: {
+    fontSize: 40,
+  },
+  profileName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  profileLabel: {
+    fontSize: 13,
+    color: '#999',
+    marginTop: 2,
+  },
+  connectionLine: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heartIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#FF6B9D',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 2,
   },
-  featureTitle: {
+  modernConnectCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#8B2332',
+    borderStyle: 'dashed',
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '40%',
+    height: 160,
+  },
+  connectLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8B2332',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  emojiPicker: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    marginHorizontal: 20,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  emojiPickerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 16,
+  },
+  emojiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  emojiButton: {
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  emojiText: {
+    fontSize: 28,
+  },
+  sectionHeader: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#7f8c8d',
+  },
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    gap: 16,
+  },
+  featureCard: {
+    width: '47%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    minHeight: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    position: 'relative',
+  },
+  featureCardDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#f5f5f5',
+  },
+  featureCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  featureIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  comingSoonBadge: {
+    backgroundColor: '#ffd700',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  comingSoonText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
+    textTransform: 'uppercase',
+  },
+  featureCardTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#8B2332',
-    textAlign: 'center',
+    color: '#2c3e50',
     marginBottom: 6,
   },
-  featureTitleDisabled: {
+  featureCardTitleDisabled: {
     color: '#999',
   },
-  featureSubtitle: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 16,
+  featureCardSubtitle: {
+    fontSize: 13,
+    color: '#7f8c8d',
+    lineHeight: 18,
+    flex: 1,
   },
-  featureSubtitleDisabled: {
+  featureCardSubtitleDisabled: {
     color: '#aaa',
   },
-  emojiPicker: { width: '100%', padding: 16, marginBottom: 16, backgroundColor: '#f8e5e8', borderRadius: 12, borderWidth: 1, borderColor: '#8B2332' },
-  emojiPickerTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12, textAlign: 'center' },
-  emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  emojiButton: { padding: 8, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb' },
-  emojiText: { fontSize: 28 },
-  partnerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+  featureCardArrow: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
   },
-  partnerEmoji: {
-    fontSize: 32,
-    marginRight: 8,
+  bottomSpacing: {
+    height: 20,
   },
 });

@@ -15,6 +15,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { HelpTooltip } from '@/components/HelpTooltip';
 
 // Theme Colors
 const THEME = {
@@ -163,8 +164,21 @@ export function CollageScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Our Story</Text>
-        <Text style={styles.headerSubtitle}>Every moment counts 💗</Text>
+        <View style={styles.headerTopRow}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Our Story</Text>
+            <Text style={styles.headerSubtitle}>Every moment counts 💗</Text>
+          </View>
+          <HelpTooltip
+            title="Memory Help"
+            tips={[
+              'Tap the + button to create a new memory',
+              'Add photos by tapping the camera icon in a memory',
+              'Memories are shared with your partner',
+              'Swipe down to refresh your timeline',
+            ]}
+          />
+        </View>
       </View>
 
       <FlatList
@@ -210,6 +224,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: 'transparent',
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 32,

@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, ActivityIndicator, SafeAreaView, RefreshControl } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { api } from '@/lib/api';
 import type { PrayerItem } from '@/types/api';
+import { HelpTooltip } from '@/components/HelpTooltip';
 
 export function PrayerListScreen() {
   const [prayers, setPrayers] = useState<PrayerItem[]>([]);
@@ -154,146 +156,173 @@ export function PrayerListScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B2332" />
-        <Text style={styles.loadingText}>Loading prayers...</Text>
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B2332" />
+          <Text style={styles.loadingText}>Loading prayers...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>🙏 Prayer List</Text>
+      {/* Modern gradient header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Prayer List</Text>
+        <View style={styles.headerRightButtons}>
+          <HelpTooltip
+            title="Prayer List Help"
+            tips={[
+              'Tap + to add a new prayer request',
+              'Tap the checkmark to mark prayers as answered',
+              'Edit or delete prayers using the icons',
+              'Pull down to refresh your shared prayer list',
+            ]}
+            iconColor="#fff"
+          />
           <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
-            <Text style={styles.addButtonText}>+ Add</Text>
+            <Ionicons name="add-circle" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
+      </View>
 
-        <ScrollView
-          style={styles.prayerList}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#8B2332" />}>
-          {prayers.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No prayers yet. Add your first prayer!</Text>
-            </View>
-          ) : (
-            prayers.map((prayer) => (
-              <View key={prayer.id} style={styles.prayerCard}>
-                <View style={styles.prayerHeader}>
-                  <Text style={styles.prayerTitle}>{prayer.title}</Text>
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity onPress={() => handleEditPrayer(prayer)} style={styles.editButton}>
-                      <Text style={styles.editButtonText}>✏️</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDeletePrayer(prayer.id)} style={styles.deleteButton}>
-                      <Text style={styles.deleteButtonText}>🗑️</Text>
-                    </TouchableOpacity>
-                  </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#8B2332" />}>
+        {prayers.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="prism-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>No prayers yet</Text>
+            <Text style={styles.emptySubtext}>Tap + to add your first prayer</Text>
+          </View>
+        ) : (
+          prayers.map((prayer) => (
+            <View key={prayer.id} style={styles.prayerCard}>
+              <View style={styles.prayerHeader}>
+                <Text style={styles.prayerTitle}>{prayer.title}</Text>
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity onPress={() => handleEditPrayer(prayer)} style={styles.iconButton}>
+                    <Ionicons name="pencil" size={20} color="#7f8c8d" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDeletePrayer(prayer.id)} style={styles.iconButton}>
+                    <Ionicons name="trash-outline" size={20} color="#e74c3c" />
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.prayerContent}>{prayer.content}</Text>
-                <View style={styles.prayerFooter}>
-                  <View style={[styles.statusBadge, prayer.isAnswered ? styles.statusBadgeAnswered : styles.statusBadgeOpen]}>
-                    <Text style={[styles.statusText, prayer.isAnswered && styles.statusTextAnswered]}>
-                      {prayer.isAnswered ? 'Answered' : 'Pending'}
-                    </Text>
-                  </View>
-                  <Text style={styles.prayerDate}>{formatDate(prayer.createdAt)}</Text>
-                </View>
-                <TouchableOpacity
-                  style={[styles.toggleButton, prayer.isAnswered ? styles.toggleButtonUndo : styles.toggleButtonComplete]}
-                  onPress={() => handleTogglePrayer(prayer)}
-                >
-                  <Text style={styles.toggleButtonText}>
-                    {prayer.isAnswered ? 'Mark as Unread' : 'Mark as Read'}
+              </View>
+              <Text style={styles.prayerContent}>{prayer.content}</Text>
+              <View style={styles.prayerFooter}>
+                <View style={[styles.statusBadge, prayer.isAnswered ? styles.statusBadgeAnswered : styles.statusBadgeOpen]}>
+                  <Ionicons
+                    name={prayer.isAnswered ? "checkmark-circle" : "time-outline"}
+                    size={14}
+                    color={prayer.isAnswered ? "#27ae60" : "#f39c12"}
+                  />
+                  <Text style={[styles.statusText, prayer.isAnswered && styles.statusTextAnswered]}>
+                    {prayer.isAnswered ? 'Answered' : 'Pending'}
                   </Text>
+                </View>
+                <Text style={styles.prayerDate}>{formatDate(prayer.createdAt)}</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.toggleButton, prayer.isAnswered ? styles.toggleButtonUndo : styles.toggleButtonComplete]}
+                onPress={() => handleTogglePrayer(prayer)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={prayer.isAnswered ? "arrow-undo" : "checkmark"}
+                  size={18}
+                  color="#fff"
+                />
+                <Text style={styles.toggleButtonText}>
+                  {prayer.isAnswered ? 'Mark as Pending' : 'Mark as Answered'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
+      </ScrollView>
+
+      <Modal visible={showAddModal} animationType="slide" transparent onRequestClose={() => setShowAddModal(false)}>
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent} keyboardShouldPersistTaps="handled">
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Add New Prayer</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Prayer Title"
+                value={newPrayer.title}
+                onChangeText={(text) => setNewPrayer({ ...newPrayer, title: text })}
+              />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Prayer Content"
+                value={newPrayer.content}
+                onChangeText={(text) => setNewPrayer({ ...newPrayer, content: text })}
+                multiline
+                numberOfLines={4}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    setNewPrayer({ title: '', content: '' });
+                    setShowAddModal(false);
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleAddPrayer}>
+                  <Text style={styles.saveButtonText}>Save</Text>
                 </TouchableOpacity>
               </View>
-            ))
-          )}
-        </ScrollView>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
 
-        <Modal visible={showAddModal} animationType="slide" transparent onRequestClose={() => setShowAddModal(false)}>
-          <View style={styles.modalOverlay}>
-            <ScrollView contentContainerStyle={styles.modalScrollContent} keyboardShouldPersistTaps="handled">
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Add New Prayer</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Prayer Title"
-                  value={newPrayer.title}
-                  onChangeText={(text) => setNewPrayer({ ...newPrayer, title: text })}
-                />
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  placeholder="Prayer Content"
-                  value={newPrayer.content}
-                  onChangeText={(text) => setNewPrayer({ ...newPrayer, content: text })}
-                  multiline
-                  numberOfLines={4}
-                />
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => {
-                      setNewPrayer({ title: '', content: '' });
-                      setShowAddModal(false);
-                    }}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleAddPrayer}>
-                    <Text style={styles.saveButtonText}>Save</Text>
-                  </TouchableOpacity>
-                </View>
+      <Modal visible={showEditModal} animationType="slide" transparent onRequestClose={() => setShowEditModal(false)}>
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent} keyboardShouldPersistTaps="handled">
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Edit Prayer</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Prayer Title"
+                value={editForm.title}
+                onChangeText={(text) => setEditForm({ ...editForm, title: text })}
+              />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Prayer Content"
+                value={editForm.content}
+                onChangeText={(text) => setEditForm({ ...editForm, content: text })}
+                multiline
+                numberOfLines={4}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    setEditForm({ title: '', content: '' });
+                    setEditingPrayer(null);
+                    setShowEditModal(false);
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleUpdatePrayer}>
+                  <Text style={styles.saveButtonText}>Update</Text>
+                </TouchableOpacity>
               </View>
-            </ScrollView>
-          </View>
-        </Modal>
-
-        <Modal visible={showEditModal} animationType="slide" transparent onRequestClose={() => setShowEditModal(false)}>
-          <View style={styles.modalOverlay}>
-            <ScrollView contentContainerStyle={styles.modalScrollContent} keyboardShouldPersistTaps="handled">
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Edit Prayer</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Prayer Title"
-                  value={editForm.title}
-                  onChangeText={(text) => setEditForm({ ...editForm, title: text })}
-                />
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  placeholder="Prayer Content"
-                  value={editForm.content}
-                  onChangeText={(text) => setEditForm({ ...editForm, content: text })}
-                  multiline
-                  numberOfLines={4}
-                />
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => {
-                      setEditForm({ title: '', content: '' });
-                      setEditingPrayer(null);
-                      setShowEditModal(false);
-                    }}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleUpdatePrayer}>
-                    <Text style={styles.saveButtonText}>Update</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </ScrollView>
-          </View>
-        </Modal>
-      </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -301,50 +330,240 @@ export function PrayerListScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#fafafa',
   },
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  backButton: { padding: 8 },
-  backButtonText: { fontSize: 16, color: '#8B2332' },
-  title: { fontSize: 20, fontWeight: '700' },
-  addButton: { paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#8B2332', borderRadius: 8 },
-  addButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 12, fontSize: 16, color: '#6b7280' },
-  prayerList: { flex: 1, padding: 16 },
-  emptyContainer: { padding: 40, alignItems: 'center' },
-  emptyText: { fontSize: 16, color: '#6b7280', textAlign: 'center' },
-  prayerCard: { marginBottom: 16, padding: 16, backgroundColor: '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' },
-  prayerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  prayerTitle: { fontSize: 18, fontWeight: '600', flex: 1 },
-  actionButtons: { flexDirection: 'row', gap: 8 },
-  editButton: { padding: 4 },
-  editButtonText: { fontSize: 20 },
-  deleteButton: { padding: 4 },
-  deleteButtonText: { fontSize: 20 },
-  prayerContent: { fontSize: 14, color: '#374151', marginBottom: 8, lineHeight: 20 },
-  prayerFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  prayerDate: { fontSize: 12, color: '#9ca3af' },
-  statusBadge: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999 },
-  statusBadgeOpen: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fecaca' },
-  statusBadgeAnswered: { backgroundColor: '#dcfce7', borderWidth: 1, borderColor: '#bbf7d0' },
-  statusText: { fontSize: 12, fontWeight: '600', color: '#b91c1c' },
-  statusTextAnswered: { color: '#166534' },
-  toggleButton: { marginTop: 12, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
-  toggleButtonComplete: { backgroundColor: '#8B2332' },
-  toggleButtonUndo: { backgroundColor: '#6b7280' },
-  toggleButtonText: { color: '#fff', fontWeight: '600' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
-  modalScrollContent: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  modalContent: { width: '100%', backgroundColor: '#fff', borderRadius: 12, padding: 20, marginBottom: 20 },
-  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
-  textArea: { height: 100, textAlignVertical: 'top' },
-  modalButtons: { flexDirection: 'row', gap: 12 },
-  modalButton: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center' },
-  cancelButton: { backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' },
-  cancelButtonText: { color: '#374151', fontSize: 16, fontWeight: '600' },
-  saveButton: { backgroundColor: '#8B2332' },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fafafa',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#7f8c8d'
+  },
+  header: {
+    backgroundColor: '#8B2332',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  headerRightButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addButton: {
+    padding: 4,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  emptyContainer: {
+    padding: 60,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    marginTop: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#95a5a6',
+    marginTop: 8,
+  },
+  prayerCard: {
+    marginBottom: 16,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  prayerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  prayerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#2c3e50',
+    flex: 1,
+    marginRight: 12,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconButton: {
+    padding: 6,
+  },
+  prayerContent: {
+    fontSize: 15,
+    color: '#34495e',
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  prayerFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  prayerDate: {
+    fontSize: 13,
+    color: '#95a5a6',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  statusBadgeOpen: {
+    backgroundColor: '#fff3cd',
+  },
+  statusBadgeAnswered: {
+    backgroundColor: '#d4edda',
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#856404',
+  },
+  statusTextAnswered: {
+    color: '#155724',
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  toggleButtonComplete: {
+    backgroundColor: '#27ae60',
+  },
+  toggleButtonUndo: {
+    backgroundColor: '#95a5a6',
+  },
+  toggleButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#2c3e50',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    fontSize: 16,
+    color: '#2c3e50',
+    backgroundColor: '#fafafa',
+  },
+  textArea: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+  },
+  cancelButtonText: {
+    color: '#374151',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    backgroundColor: '#8B2332',
+    shadowColor: '#8B2332',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

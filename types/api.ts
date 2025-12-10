@@ -120,6 +120,59 @@ export interface Anniversary {
   nextYearAnniversary: string;
 }
 
+// ============= Anniversary Reminder Types =============
+export interface AnniversaryReminder {
+  id: number;
+  coupleId: number;
+  title: string;
+  description?: string;
+  anniversaryDate: string;
+  reminderDaysBefore: number;
+  isRecurring: boolean;
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAnniversaryReminderRequest {
+  title: string;
+  description?: string;
+  anniversaryDate: string;
+  reminderDaysBefore: number;
+  isRecurring?: boolean;
+}
+
+export interface UpdateAnniversaryReminderRequest {
+  title?: string;
+  description?: string;
+  anniversaryDate?: string;
+  reminderDaysBefore?: number;
+  isRecurring?: boolean;
+  isEnabled?: boolean;
+}
+
+// ============= Reminder Checklist Types =============
+export interface ReminderChecklistItem {
+  id: number;
+  reminderId: number;
+  text: string;
+  isCompleted: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateChecklistItemRequest {
+  text: string;
+  displayOrder?: number;
+}
+
+export interface UpdateChecklistItemRequest {
+  text?: string;
+  isCompleted?: boolean;
+  isEnabled?: boolean;
+}
+
 // ============= Prayer Types =============
 export interface PrayerItem {
   id: number;
@@ -151,4 +204,21 @@ export interface TimelineActivity {
   location?: string;
   createdAt: string;
   photos: Photo[];
+}
+
+// ============= Devotional Types =============
+export interface DevotionalPlan {
+  id: number;
+  day_number: number;
+  title: string;
+  reference: string;
+  scripture_text: string;
+  reflection_question?: string;
+  is_completed: boolean;
+  completed_at?: string;
+  is_custom?: boolean;
+}
+
+export interface ToggleDevotionalResponse {
+  isCompleted: boolean;
 }
