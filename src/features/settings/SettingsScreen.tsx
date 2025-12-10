@@ -84,6 +84,14 @@ export function SettingsScreen() {
             <Ionicons name="chevron-forward" size={20} color="#95a5a6" />
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/help')}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="help-circle-outline" size={20} color="#8B2332" />
+            </View>
+            <Text style={styles.menuText}>Help</Text>
+            <Ionicons name="chevron-forward" size={20} color="#95a5a6" />
+          </TouchableOpacity>
+
           {hasPartner && (
             <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/partner-info')}>
               <View style={styles.iconCircle}>
