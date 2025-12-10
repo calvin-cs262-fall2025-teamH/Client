@@ -12,14 +12,17 @@ import type {
   CreateActivityRequest,
   CreateAnniversaryReminderRequest,
   CreateCalendarEventRequest,
+  CreateChecklistItemRequest,
   CreateCoupleResponse,
   CreatePrayerRequest,
   DevotionalPlan,
   Photo,
   PrayerItem,
+  ReminderChecklistItem,
   TimelineActivity,
   ToggleDevotionalResponse,
   UpdateAnniversaryReminderRequest,
+  UpdateChecklistItemRequest,
   UpdatePrayerRequest,
 } from "@/types/api";
 import * as SecureStore from "expo-secure-store";
@@ -358,42 +361,28 @@ export const api = {
     });
   },
 
-  // ============= Devotional APIs =============
-  async getDevotionals(category: 'couple' | 'year' = 'couple') {
-    return authHttp<DevotionalPlan[]>(`/api/devotionals?category=${category}`);
+  // ============= Reminder Checklist APIs =============
+  async getChecklistItems(reminderId: number) {
+    return authHttp<ReminderChecklistItem[]>(`/api/anniversary-reminders/${reminderId}/checklist`);
   },
 
-  async toggleDevotional(id: number) {
-    return authHttp<ToggleDevotionalResponse>(`/api/devotionals/${id}/toggle`, {
-      method: "POST",
-    });
-  },
-
-  async toggleCustomDevotional(dayId: number) {
-    return authHttp<ToggleDevotionalResponse>(`/api/devotionals/custom/${dayId}/toggle`, {
-      method: "POST",
-    });
-  },
-
-  async saveCustomPlan(data: { start_book: string; start_chapter: number; end_book: string; end_chapter: number; chapters_per_day: number }) {
-    return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom", {
+  async createChecklistItem(reminderId: number, data: CreateChecklistItemRequest) {
+    return authHttp<ReminderChecklistItem>(`/api/anniversary-reminders/${reminderId}/checklist`, {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  async appendCustomPlan(data: { start_book: string; start_chapter: number; end_book: string; end_chapter: number; chapters_per_day: number }) {
-    return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom/append", {
-      method: "POST",
+  async updateChecklistItem(reminderId: number, itemId: number, data: UpdateChecklistItemRequest) {
+    return authHttp<ReminderChecklistItem>(`/api/anniversary-reminders/${reminderId}/checklist/${itemId}`, {
+      method: "PUT",
       body: JSON.stringify(data),
     });
   },
 
-  async deleteCustomPlanItems(dayIds: number[]) {
-    return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom/items", {
+  async deleteChecklistItem(reminderId: number, itemId: number) {
+    return authHttp<void>(`/api/anniversary-reminders/${reminderId}/checklist/${itemId}`, {
       method: "DELETE",
-      body: JSON.stringify({ dayIds }),
     });
   },
-
 };

@@ -151,6 +151,28 @@ export interface UpdateAnniversaryReminderRequest {
   isEnabled?: boolean;
 }
 
+// ============= Reminder Checklist Types =============
+export interface ReminderChecklistItem {
+  id: number;
+  reminderId: number;
+  text: string;
+  isCompleted: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateChecklistItemRequest {
+  text: string;
+  displayOrder?: number;
+}
+
+export interface UpdateChecklistItemRequest {
+  text?: string;
+  isCompleted?: boolean;
+  isEnabled?: boolean;
+}
+
 // ============= Prayer Types =============
 export interface PrayerItem {
   id: number;
