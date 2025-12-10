@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePartner } from '@/contexts/PartnerContext';
 import { api } from '@/lib/api';
@@ -84,14 +84,14 @@ export function HomeScreen() {
       disabled: false,
     },
     {
-      title: 'To-Do List',
-      subtitle: 'Accomplish goals together',
-      icon: 'checkmark-circle-outline' as const,
+      title: 'Daily Bread',
+      subtitle: 'Grow in faith together',
+      icon: 'book-outline' as const,
       color: '#C026D3',
       gradient: ['#F5E5FA', '#EBD1F0'],
-      action: () => Alert.alert('Coming Soon', 'We are still building the shared to-do list experience. Stay tuned!'),
-      disabled: true,
+      action: () => router.push('/devotional'),
     },
+
   ]), []);
 
   return (
