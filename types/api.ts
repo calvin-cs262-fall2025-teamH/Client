@@ -194,6 +194,7 @@ export interface DevotionalPlan {
   reflection_question?: string;
   is_completed: boolean;
   completed_at?: string;
+  is_custom?: boolean;
 }
 
 export interface ToggleDevotionalResponse {

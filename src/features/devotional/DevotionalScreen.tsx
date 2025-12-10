@@ -20,7 +20,7 @@ import { api } from '@/lib/api';
 import { DevotionalPlan } from '@/types/api';
 import { Colors } from '@/constants/theme';
 
-type Mode = 'couple' | 'year' | 'custom';
+type Mode = 'couple' | 'year';
 
 export function DevotionalScreen() {
   const [plans, setPlans] = useState<DevotionalPlan[]>([]);
@@ -33,16 +33,11 @@ export function DevotionalScreen() {
   // Custom Plan Form State
   const [startBook, setStartBook] = useState('Genesis');
   const [startChapter, setStartChapter] = useState('1');
+  const [endBook, setEndBook] = useState('Revelation');
+  const [endChapter, setEndChapter] = useState('22');
   const [chaptersPerDay, setChaptersPerDay] = useState('1');
 
   const loadDevotionals = useCallback(async () => {
-    if (mode === 'custom') {
-      // For now, custom mode just shows a placeholder or needs specific API logic
-      // We'll handle this by showing the setup modal if no plan exists
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       const response = await api.getDevotionals(mode);
@@ -71,17 +66,19 @@ export function DevotionalScreen() {
       await api.saveCustomPlan({
         start_book: startBook,
         start_chapter: parseInt(startChapter),
+        end_book: endBook,
+        end_chapter: parseInt(endChapter),
         chapters_per_day: parseInt(chaptersPerDay),
       });
       setShowCustomModal(false);
       Alert.alert('Success', 'Your custom reading plan has been saved!');
-      // Ideally, reload data here
+      loadDevotionals();
     } catch (error) {
       Alert.alert('Error', 'Failed to save custom plan');
     }
   };
 
-  const handleToggle = async (id: number) => {
+  const handleToggle = async (id: number, isCustom: boolean = false) => {
     // Optimistic update
     setPlans(current =>
       current.map(p =>
@@ -90,7 +87,10 @@ export function DevotionalScreen() {
     );
 
     try {
-      const response = await api.toggleDevotional(id);
+      const response = isCustom 
+        ? await api.toggleCustomDevotional(id)
+        : await api.toggleDevotional(id);
+
       if (!response.success) {
         // Revert if failed
         setPlans(current =>
@@ -120,12 +120,12 @@ export function DevotionalScreen() {
     >
       <TouchableOpacity
         style={styles.checkboxContainer}
-        onPress={() => handleToggle(item.id)}
+        onPress={() => handleToggle(item.id, item.is_custom)}
       >
         <Ionicons
           name={item.is_completed ? 'checkbox' : 'square-outline'}
           size={24}
-          color={item.is_completed ? Colors.primary : '#999'}
+          color={item.is_completed ? Colors.light.tint : '#999'}
         />
       </TouchableOpacity>
 
@@ -147,7 +147,13 @@ export function DevotionalScreen() {
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Daily Bread</Text>
-        <View style={{ width: 24 }} />
+        {mode === 'year' ? (
+          <TouchableOpacity onPress={() => setShowCustomModal(true)} style={styles.settingsButton}>
+            <Ionicons name="settings-outline" size={24} color="#333" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 24 }} />
+        )}
       </View>
 
       {/* Mode Selection Tabs */}
@@ -164,36 +170,25 @@ export function DevotionalScreen() {
         >
           <Text style={[styles.tabText, mode === 'year' && styles.activeTabText]}>Bible in Year</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, mode === 'custom' && styles.activeTab]}
-          onPress={() => {
-            setMode('custom');
-            setShowCustomModal(true);
-          }}
-        >
-          <Text style={[styles.tabText, mode === 'custom' && styles.activeTabText]}>Custom</Text>
-        </TouchableOpacity>
       </View>
 
-      {mode !== 'custom' && (
-        <View style={styles.progressContainer}>
-          <View style={styles.progressTextRow}>
-            <Text style={styles.progressLabel}>Your Journey</Text>
-            <Text style={styles.progressValue}>{completedCount}/{plans.length} Days</Text>
-          </View>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
-          </View>
+      <View style={styles.progressContainer}>
+        <View style={styles.progressTextRow}>
+          <Text style={styles.progressLabel}>Your Journey</Text>
+          <Text style={styles.progressValue}>{completedCount}/{plans.length} Days</Text>
         </View>
-      )}
+        <View style={styles.progressBarBg}>
+          <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+        </View>
+      </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 20 }} />
-      ) : mode === 'custom' ? (
+        <ActivityIndicator size="large" color={Colors.light.tint} style={{ marginTop: 20 }} />
+      ) : mode === 'year' && plans.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="book-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyStateText}>Custom Plan</Text>
-          <Text style={styles.emptyStateSubtext}>Tap "Custom" above to configure your reading plan.</Text>
+          <Text style={styles.emptyStateText}>Create Your Reading Plan</Text>
+          <Text style={styles.emptyStateSubtext}>Customize your Bible reading journey.</Text>
           <TouchableOpacity style={styles.setupButton} onPress={() => setShowCustomModal(true)}>
             <Text style={styles.setupButtonText}>Configure Plan</Text>
           </TouchableOpacity>
@@ -228,9 +223,11 @@ export function DevotionalScreen() {
               <Text style={styles.modalTitle}>{selectedPlan.title}</Text>
               <Text style={styles.modalReference}>{selectedPlan.reference}</Text>
 
-              <View style={styles.scriptureBox}>
-                <Text style={styles.scriptureText}>"{selectedPlan.scripture_text}"</Text>
-              </View>
+              {selectedPlan.scripture_text && (
+                <View style={styles.scriptureBox}>
+                  <Text style={styles.scriptureText}>"{selectedPlan.scripture_text}"</Text>
+                </View>
+              )}
 
               {selectedPlan.reflection_question && (
                 <View style={styles.reflectionBox}>
@@ -245,7 +242,7 @@ export function DevotionalScreen() {
                   selectedPlan.is_completed && styles.markButtonCompleted
                 ]}
                 onPress={() => {
-                  handleToggle(selectedPlan.id);
+                  handleToggle(selectedPlan.id, selectedPlan.is_custom);
                   setSelectedPlan(prev => prev ? { ...prev, is_completed: !prev.is_completed } : null);
                 }}
               >
@@ -270,7 +267,7 @@ export function DevotionalScreen() {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Text style={styles.modalText}>Setup Custom Plan</Text>
+            <Text style={styles.modalText}>Setup Reading Plan</Text>
 
             <Text style={styles.label}>Start Book</Text>
             <TextInput
@@ -287,6 +284,23 @@ export function DevotionalScreen() {
               onChangeText={setStartChapter}
               keyboardType="numeric"
               placeholder="1"
+            />
+
+            <Text style={styles.label}>End Book</Text>
+            <TextInput
+              style={styles.input}
+              value={endBook}
+              onChangeText={setEndBook}
+              placeholder="e.g. Revelation"
+            />
+
+            <Text style={styles.label}>End Chapter</Text>
+            <TextInput
+              style={styles.input}
+              value={endChapter}
+              onChangeText={setEndChapter}
+              keyboardType="numeric"
+              placeholder="22"
             />
 
             <Text style={styles.label}>Chapters per Day</Text>
@@ -338,6 +352,9 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 4,
   },
+  settingsButton: {
+    padding: 4,
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -360,7 +377,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: Colors.primary,
+    borderBottomColor: Colors.light.tint,
   },
   tabText: {
     fontSize: 14,
@@ -368,7 +385,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabText: {
-    color: Colors.primary,
+    color: Colors.light.tint,
     fontWeight: '600',
   },
   // Empty State
@@ -392,7 +409,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   setupButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.light.tint,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
@@ -418,7 +435,7 @@ const styles = StyleSheet.create({
   },
   progressValue: {
     fontSize: 14,
-    color: Colors.primary,
+    color: Colors.light.tint,
     fontWeight: '600',
   },
   progressBarBg: {
@@ -429,7 +446,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.light.tint,
     borderRadius: 4,
   },
   listContent: {
@@ -523,7 +540,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
   },
   buttonSave: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.light.tint,
   },
   textStyle: {
     color: 'white',
@@ -562,7 +579,7 @@ const styles = StyleSheet.create({
   },
   modalReference: {
     fontSize: 18,
-    color: Colors.primary,
+    color: Colors.light.tint,
     marginBottom: 32,
   },
   scriptureBox: {
@@ -571,7 +588,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 32,
     borderLeftWidth: 4,
-    borderLeftColor: Colors.primary,
+    borderLeftColor: Colors.light.tint,
   },
   scriptureText: {
     fontSize: 18,
@@ -594,7 +611,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   markButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.light.tint,
     paddingVertical: 16,
     borderRadius: 30,
     alignItems: 'center',
@@ -613,3 +630,4 @@ const styles = StyleSheet.create({
     color: '#666',
   },
 });
+
