@@ -10,8 +10,6 @@ import {
   Modal,
   ScrollView,
   SafeAreaView,
-  StatusBar,
-  TextInput,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +21,7 @@ import { BIBLE_BOOKS } from '@/constants/bibleData';
 
 type Mode = 'couple' | 'year';
 type SelectionType = 'startBook' | 'startChapter' | 'endBook' | 'endChapter' | null;
+type BibleBook = typeof BIBLE_BOOKS[number];
 
 export function DevotionalScreen() {
   const [plans, setPlans] = useState<DevotionalPlan[]>([]);
@@ -83,7 +82,7 @@ export function DevotionalScreen() {
       setShowCustomModal(false);
       Alert.alert('Success', 'Chapters added to your plan!');
       loadDevotionals();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to add chapters');
     }
   };
@@ -113,7 +112,7 @@ export function DevotionalScreen() {
               setSelectedItems(new Set());
               setSelectionMode(false);
               loadDevotionals();
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to delete items');
             }
           },
@@ -162,7 +161,7 @@ export function DevotionalScreen() {
           )
         );
       }
-    } catch (error) {
+    } catch {
       // Revert if error
       setPlans(current =>
         current.map(p =>
@@ -372,7 +371,7 @@ export function DevotionalScreen() {
 
               {selectedPlan.scripture_text && (
                 <View style={styles.scriptureBox}>
-                  <Text style={styles.scriptureText}>"{selectedPlan.scripture_text}"</Text>
+                  <Text style={styles.scriptureText}>&quot;{selectedPlan.scripture_text}&quot;</Text>
                 </View>
               )}
 
@@ -442,12 +441,12 @@ export function DevotionalScreen() {
                       style={styles.selectionItem}
                       onPress={() => {
                         if (selectionType === 'startBook') {
-                          setStartBook(item as any);
+                          setStartBook(item as BibleBook);
                           setStartChapter(1);
-                          setEndBook(item as any);
+                          setEndBook(item as BibleBook);
                           setEndChapter(1);
                         } else if (selectionType === 'endBook') {
-                          setEndBook(item as any);
+                          setEndBook(item as BibleBook);
                           setEndChapter(1);
                         } else if (selectionType === 'startChapter') {
                           setStartChapter(item as number);

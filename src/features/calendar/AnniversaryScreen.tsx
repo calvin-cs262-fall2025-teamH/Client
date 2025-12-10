@@ -4,9 +4,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { api } from '@/lib/api';
-import { Anniversary, CustomAnniversary } from '@/types/api';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Anniversary } from '@/types/api';
 
 export default function AnniversaryScreen() {
   const [loading, setLoading] = useState(true);
@@ -68,7 +66,7 @@ export default function AnniversaryScreen() {
       } else {
         Alert.alert('Error', response.message || 'Failed to create anniversary');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to create anniversary');
     } finally {
       setSubmitting(false);
@@ -86,7 +84,7 @@ export default function AnniversaryScreen() {
       } else {
         Alert.alert('Error', response.message || 'Failed to update start date');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update start date');
     } finally {
       setSubmitting(false);
@@ -110,7 +108,7 @@ export default function AnniversaryScreen() {
               } else {
                 Alert.alert('Error', response.message || 'Failed to delete');
               }
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to delete');
             }
           }

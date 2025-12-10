@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePartner } from '@/contexts/PartnerContext';
 import { api } from '@/lib/api';
