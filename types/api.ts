@@ -183,3 +183,19 @@ export interface TimelineActivity {
   createdAt: string;
   photos: Photo[];
 }
+
+// ============= Devotional Types =============
+export interface DevotionalPlan {
+  id: number;
+  day_number: number;
+  title: string;
+  reference: string;
+  scripture_text: string;
+  reflection_question?: string;
+  is_completed: boolean;
+  completed_at?: string;
+}
+
+export interface ToggleDevotionalResponse {
+  isCompleted: boolean;
+}

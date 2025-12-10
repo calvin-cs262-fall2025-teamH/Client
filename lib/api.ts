@@ -14,16 +14,18 @@ import type {
   CreateCalendarEventRequest,
   CreateCoupleResponse,
   CreatePrayerRequest,
+  DevotionalPlan,
   Photo,
   PrayerItem,
   TimelineActivity,
+  ToggleDevotionalResponse,
   UpdateAnniversaryReminderRequest,
   UpdatePrayerRequest,
 } from "@/types/api";
 import * as SecureStore from "expo-secure-store";
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://10.25.12.228:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.87.119:4000";
 
 console.log('[api] BASE URL configured as:', BASE);
 
@@ -355,4 +357,23 @@ export const api = {
       method: "PUT",
     });
   },
+
+  // ============= Devotional APIs =============
+  async getDevotionals(category: 'couple' | 'year' = 'couple') {
+    return authHttp<DevotionalPlan[]>(`/api/devotionals?category=${category}`);
+  },
+
+  async toggleDevotional(id: number) {
+    return authHttp<ToggleDevotionalResponse>(`/api/devotionals/${id}/toggle`, {
+      method: "POST",
+    });
+  },
+
+  async saveCustomPlan(data: { start_book: string; start_chapter: number; chapters_per_day: number }) {
+    return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
 };
