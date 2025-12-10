@@ -224,11 +224,11 @@ export function DevotionalScreen() {
             Day {item.day_number}: {item.title}
           </Text>
           <Text style={styles.cardReference}>{item.reference}</Text>
-          <Text style={styles.cardVerse} numberOfLines={2}>
-            {item.scripture_text && item.scripture_text !== item.reference 
-              ? item.scripture_text 
-              : "Thy word is a lamp unto my feet, and a light unto my path."}
-          </Text>
+          {item.scripture_text && item.scripture_text !== item.reference && (
+            <Text style={styles.cardVerse} numberOfLines={2}>
+              {item.scripture_text}
+            </Text>
+          )}
         </View>
 
         {!selectionMode && <Ionicons name="chevron-forward" size={20} color="#ccc" />}
