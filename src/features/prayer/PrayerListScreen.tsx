@@ -4,6 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@/lib/api';
 import type { PrayerItem } from '@/types/api';
+import { HelpTooltip } from '@/components/HelpTooltip';
 
 export function PrayerListScreen() {
   const [prayers, setPrayers] = useState<PrayerItem[]>([]);
@@ -172,9 +173,20 @@ export function PrayerListScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Prayer List</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
-          <Ionicons name="add-circle" size={28} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerRightButtons}>
+          <HelpTooltip
+            title="Prayer List Help"
+            tips={[
+              'Tap + to add a new prayer request',
+              'Tap the checkmark to mark prayers as answered',
+              'Edit or delete prayers using the icons',
+              'Pull down to refresh your shared prayer list',
+            ]}
+          />
+          <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
+            <Ionicons name="add-circle" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -354,6 +366,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 0.5,
+  },
+  headerRightButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   addButton: {
     padding: 4,
