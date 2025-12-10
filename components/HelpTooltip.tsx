@@ -6,11 +6,10 @@ import { router } from 'expo-router';
 interface HelpTooltipProps {
     title: string;
     tips: string[];
-    sectionId?: string;
     iconColor?: string;
 }
 
-export function HelpTooltip({ title, tips, sectionId, iconColor = '#8B2332' }: HelpTooltipProps) {
+export function HelpTooltip({ title, tips, iconColor = '#8B2332' }: HelpTooltipProps) {
     const [visible, setVisible] = useState(false);
 
     const handleViewFullHelp = () => {
