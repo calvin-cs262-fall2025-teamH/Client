@@ -10,7 +10,6 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -51,50 +50,6 @@ export default function AnniversaryRemindersScreen() {
     loadReminders();
   }, [loadReminders]);
 
-  const handleToggleEnabled = async (id: number) => {
-    // Optimistic update - immediately update UI
-    setReminders((prev) =>
-      prev.map((reminder) =>
-        reminder.id === id
-          ? { ...reminder, isEnabled: !reminder.isEnabled }
-          : reminder
-      )
-    );
-
-    try {
-      const response = await api.toggleAnniversaryReminderEnabled(id);
-      if (response.success && response.data) {
-        // Update with server response to ensure consistency
-        setReminders((prev) =>
-          prev.map((reminder) =>
-            reminder.id === id ? response.data! : reminder
-          )
-        );
-      } else {
-        // Revert on failure
-        setReminders((prev) =>
-          prev.map((reminder) =>
-            reminder.id === id
-              ? { ...reminder, isEnabled: !reminder.isEnabled }
-              : reminder
-          )
-        );
-        Alert.alert('Error', 'Failed to update reminder');
-      }
-    } catch (error) {
-      console.error('Failed to toggle reminder:', error);
-      // Revert on error
-      setReminders((prev) =>
-        prev.map((reminder) =>
-          reminder.id === id
-            ? { ...reminder, isEnabled: !reminder.isEnabled }
-            : reminder
-        )
-      );
-      Alert.alert('Error', 'Failed to update reminder');
-    }
-  };
-
   const handleDelete = (id: number, title: string) => {
     Alert.alert(
       'Delete Reminder',
@@ -133,7 +88,7 @@ export default function AnniversaryRemindersScreen() {
   const getDaysUntil = (dateString: string, isRecurring: boolean = false) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    let anniversaryDate = new Date(dateString);
+    const anniversaryDate = new Date(dateString);
     anniversaryDate.setHours(0, 0, 0, 0);
     
     // For recurring reminders, if the date has passed this year, use next year's date
@@ -410,7 +365,7 @@ export default function AnniversaryRemindersScreen() {
                   <View style={styles.actionButtons}>
                     <TouchableOpacity
                       style={styles.editButton}
-                      onPress={() => router.push(`/edit-anniversary-reminder/${reminder.id}` as any)}
+                      onPress={() => router.push(`/edit-anniversary-reminder/${reminder.id}`)}
                     >
                       <Text style={styles.editButtonText}>
                         ✏️ Edit
