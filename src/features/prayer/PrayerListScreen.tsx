@@ -182,6 +182,7 @@ export function PrayerListScreen() {
               'Edit or delete prayers using the icons',
               'Pull down to refresh your shared prayer list',
             ]}
+            iconColor="#fff"
           />
           <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
             <Ionicons name="add-circle" size={28} color="#fff" />

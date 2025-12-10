@@ -599,6 +599,7 @@ export default function CalendarScreen() {
                 'Use the + button to create new events',
                 'Tap the sync icon to add events to your phone calendar',
               ]}
+              iconColor="#fff"
             />
             <TouchableOpacity onPress={syncToPhoneCalendar} style={styles.syncButton}>
               <Ionicons name="sync" size={20} color="#fff" />

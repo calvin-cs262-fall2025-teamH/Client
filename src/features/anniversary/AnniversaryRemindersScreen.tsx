@@ -4,17 +4,19 @@ import type { AnniversaryReminder } from '@/types/api';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { HelpTooltip } from '@/components/HelpTooltip';
 
 export default function AnniversaryRemindersScreen() {
   const [reminders, setReminders] = useState<AnniversaryReminder[]>([]);
@@ -149,10 +151,18 @@ export default function AnniversaryRemindersScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Back</Text>
+            <Ionicons name="arrow-back" size={24} color="#8B2332" />
           </TouchableOpacity>
           <Text style={styles.title}>Anniversary Reminders</Text>
-          <View style={styles.headerRight} />
+          <HelpTooltip
+            title="Anniversary Help"
+            tips={[
+              'Tap + to create a new anniversary reminder',
+              'Toggle the switch to enable/disable reminders',
+              'Set how many days before to be reminded',
+              'Recurring reminders repeat every year',
+            ]}
+          />
         </View>
 
         <ScrollView
@@ -177,8 +187,8 @@ export default function AnniversaryRemindersScreen() {
             reminders.map((reminder) => {
               const daysUntil = getDaysUntil(reminder.anniversaryDate);
               return (
-                <View 
-                  key={reminder.id} 
+                <View
+                  key={reminder.id}
                   style={[
                     styles.reminderCard,
                     !reminder.isEnabled && styles.reminderCardDisabled
