@@ -12,12 +12,15 @@ import type {
   CreateActivityRequest,
   CreateAnniversaryReminderRequest,
   CreateCalendarEventRequest,
+  CreateChecklistItemRequest,
   CreateCoupleResponse,
   CreatePrayerRequest,
   Photo,
   PrayerItem,
+  ReminderChecklistItem,
   TimelineActivity,
   UpdateAnniversaryReminderRequest,
+  UpdateChecklistItemRequest,
   UpdatePrayerRequest,
 } from "@/types/api";
 import * as SecureStore from "expo-secure-store";
@@ -353,6 +356,31 @@ export const api = {
   async toggleAnniversaryReminderEnabled(id: number) {
     return authHttp<AnniversaryReminder>(`/api/anniversary-reminders/${id}/toggle`, {
       method: "PUT",
+    });
+  },
+
+  // ============= Reminder Checklist APIs =============
+  async getChecklistItems(reminderId: number) {
+    return authHttp<ReminderChecklistItem[]>(`/api/anniversary-reminders/${reminderId}/checklist`);
+  },
+
+  async createChecklistItem(reminderId: number, data: CreateChecklistItemRequest) {
+    return authHttp<ReminderChecklistItem>(`/api/anniversary-reminders/${reminderId}/checklist`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateChecklistItem(reminderId: number, itemId: number, data: UpdateChecklistItemRequest) {
+    return authHttp<ReminderChecklistItem>(`/api/anniversary-reminders/${reminderId}/checklist/${itemId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteChecklistItem(reminderId: number, itemId: number) {
+    return authHttp<void>(`/api/anniversary-reminders/${reminderId}/checklist/${itemId}`, {
+      method: "DELETE",
     });
   },
 };
