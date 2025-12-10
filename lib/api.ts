@@ -382,4 +382,18 @@ export const api = {
     });
   },
 
+  async appendCustomPlan(data: { start_book: string; start_chapter: number; end_book: string; end_chapter: number; chapters_per_day: number }) {
+    return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom/append", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteCustomPlanItems(dayIds: number[]) {
+    return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom/items", {
+      method: "DELETE",
+      body: JSON.stringify({ dayIds }),
+    });
+  },
+
 };

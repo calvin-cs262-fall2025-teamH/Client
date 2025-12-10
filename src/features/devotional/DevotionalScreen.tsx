@@ -26,15 +26,19 @@ export function DevotionalScreen() {
   const [plans, setPlans] = useState<DevotionalPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<DevotionalPlan | null>(null);
+  
+  // State
   const [mode, setMode] = useState<Mode>('couple');
+  const [selectedPlan, setSelectedPlan] = useState<DevotionalPlan | null>(null);
   const [showCustomModal, setShowCustomModal] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
 
   // Custom Plan Form State
   const [startBook, setStartBook] = useState('Genesis');
   const [startChapter, setStartChapter] = useState('1');
-  const [endBook, setEndBook] = useState('Revelation');
-  const [endChapter, setEndChapter] = useState('22');
+  const [endBook, setEndBook] = useState('Genesis');
+  const [endChapter, setEndChapter] = useState('10');
   const [chaptersPerDay, setChaptersPerDay] = useState('1');
 
   const loadDevotionals = useCallback(async () => {
@@ -61,9 +65,9 @@ export function DevotionalScreen() {
     loadDevotionals();
   };
 
-  const handleSaveCustomPlan = async () => {
+  const handleAppendCustomPlan = async () => {
     try {
-      await api.saveCustomPlan({
+      await api.appendCustomPlan({
         start_book: startBook,
         start_chapter: parseInt(startChapter),
         end_book: endBook,
@@ -71,14 +75,59 @@ export function DevotionalScreen() {
         chapters_per_day: parseInt(chaptersPerDay),
       });
       setShowCustomModal(false);
-      Alert.alert('Success', 'Your custom reading plan has been saved!');
+      Alert.alert('Success', 'Chapters added to your plan!');
       loadDevotionals();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save custom plan');
+      Alert.alert('Error', 'Failed to add chapters');
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedItems.size === 0) return;
+
+    Alert.alert(
+      'Delete Items',
+      `Are you sure you want to delete ${selectedItems.size} items?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.deleteCustomPlanItems(Array.from(selectedItems));
+              setSelectedItems(new Set());
+              setSelectionMode(false);
+              loadDevotionals();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete items');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const toggleSelection = (id: number) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+    
+    if (newSelected.size === 0) {
+      setSelectionMode(false);
     }
   };
 
   const handleToggle = async (id: number, isCustom: boolean = false) => {
+    if (selectionMode) {
+      toggleSelection(id);
+      return;
+    }
+
     // Optimistic update
     setPlans(current =>
       current.map(p =>
@@ -112,33 +161,58 @@ export function DevotionalScreen() {
   const completedCount = plans.filter(p => p.is_completed).length;
   const progress = plans.length > 0 ? completedCount / plans.length : 0;
 
-  const renderItem = ({ item }: { item: DevotionalPlan }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => setSelectedPlan(item)}
-      activeOpacity={0.7}
-    >
+  const renderItem = ({ item }: { item: DevotionalPlan }) => {
+    const isSelected = selectedItems.has(item.id);
+    
+    return (
       <TouchableOpacity
-        style={styles.checkboxContainer}
-        onPress={() => handleToggle(item.id, item.is_custom)}
+        style={[styles.card, isSelected && styles.cardSelected]}
+        onPress={() => {
+          if (selectionMode) {
+            toggleSelection(item.id);
+          } else {
+            setSelectedPlan(item);
+          }
+        }}
+        onLongPress={() => {
+          if (mode === 'year') {
+            setSelectionMode(true);
+            toggleSelection(item.id);
+          }
+        }}
+        activeOpacity={0.7}
       >
-        <Ionicons
-          name={item.is_completed ? 'checkbox' : 'square-outline'}
-          size={24}
-          color={item.is_completed ? Colors.light.tint : '#999'}
-        />
+        <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={() => handleToggle(item.id, item.is_custom)}
+          disabled={selectionMode}
+        >
+          {selectionMode ? (
+            <Ionicons
+              name={isSelected ? 'checkbox' : 'square-outline'}
+              size={24}
+              color={isSelected ? Colors.light.tint : '#999'}
+            />
+          ) : (
+            <Ionicons
+              name={item.is_completed ? 'checkbox' : 'square-outline'}
+              size={24}
+              color={item.is_completed ? Colors.light.tint : '#999'}
+            />
+          )}
+        </TouchableOpacity>
+
+        <View style={styles.cardContent}>
+          <Text style={[styles.cardTitle, item.is_completed && !selectionMode && styles.completedText]}>
+            Day {item.day_number}: {item.title}
+          </Text>
+          <Text style={styles.cardReference}>{item.reference}</Text>
+        </View>
+
+        {!selectionMode && <Ionicons name="chevron-forward" size={20} color="#ccc" />}
       </TouchableOpacity>
-
-      <View style={styles.cardContent}>
-        <Text style={[styles.cardTitle, item.is_completed && styles.completedText]}>
-          Day {item.day_number}: {item.title}
-        </Text>
-        <Text style={styles.cardReference}>{item.reference}</Text>
-      </View>
-
-      <Ionicons name="chevron-forward" size={20} color="#ccc" />
-    </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -147,9 +221,9 @@ export function DevotionalScreen() {
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Daily Bread</Text>
-        {mode === 'year' ? (
-          <TouchableOpacity onPress={() => setShowCustomModal(true)} style={styles.settingsButton}>
-            <Ionicons name="settings-outline" size={24} color="#333" />
+        {mode === 'year' && selectionMode ? (
+          <TouchableOpacity onPress={handleDeleteSelected} style={styles.deleteButton}>
+            <Text style={styles.deleteButtonText}>Delete ({selectedItems.size})</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 24 }} />
@@ -160,7 +234,10 @@ export function DevotionalScreen() {
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tab, mode === 'couple' && styles.activeTab]}
-          onPress={() => setMode('couple')}
+          onPress={() => {
+            setMode('couple');
+            setSelectionMode(false);
+          }}
         >
           <Text style={[styles.tabText, mode === 'couple' && styles.activeTabText]}>Couples</Text>
         </TouchableOpacity>
@@ -171,6 +248,19 @@ export function DevotionalScreen() {
           <Text style={[styles.tabText, mode === 'year' && styles.activeTabText]}>Bible in Year</Text>
         </TouchableOpacity>
       </View>
+
+      {mode === 'year' && !selectionMode && (
+        <View style={styles.actionBar}>
+          <TouchableOpacity 
+            style={styles.addChaptersButton}
+            onPress={() => setShowCustomModal(true)}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#fff" />
+            <Text style={styles.addChaptersText}>Add Chapters</Text>
+          </TouchableOpacity>
+          <Text style={styles.hintText}>Long press items to manage</Text>
+        </View>
+      )}
 
       <View style={styles.progressContainer}>
         <View style={styles.progressTextRow}>
@@ -187,10 +277,10 @@ export function DevotionalScreen() {
       ) : mode === 'year' && plans.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="book-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyStateText}>Create Your Reading Plan</Text>
-          <Text style={styles.emptyStateSubtext}>Customize your Bible reading journey.</Text>
+          <Text style={styles.emptyStateText}>Start Your Reading Plan</Text>
+          <Text style={styles.emptyStateSubtext}>Add chapters to build your custom reading list.</Text>
           <TouchableOpacity style={styles.setupButton} onPress={() => setShowCustomModal(true)}>
-            <Text style={styles.setupButtonText}>Configure Plan</Text>
+            <Text style={styles.setupButtonText}>Add Chapters</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -267,7 +357,7 @@ export function DevotionalScreen() {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Text style={styles.modalText}>Setup Reading Plan</Text>
+            <Text style={styles.modalText}>Add Readings</Text>
 
             <Text style={styles.label}>Start Book</Text>
             <TextInput
@@ -291,7 +381,7 @@ export function DevotionalScreen() {
               style={styles.input}
               value={endBook}
               onChangeText={setEndBook}
-              placeholder="e.g. Revelation"
+              placeholder="e.g. Genesis"
             />
 
             <Text style={styles.label}>End Chapter</Text>
@@ -300,7 +390,7 @@ export function DevotionalScreen() {
               value={endChapter}
               onChangeText={setEndChapter}
               keyboardType="numeric"
-              placeholder="22"
+              placeholder="10"
             />
 
             <Text style={styles.label}>Chapters per Day</Text>
@@ -321,9 +411,9 @@ export function DevotionalScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.buttonSave]}
-                onPress={handleSaveCustomPlan}
+                onPress={handleAppendCustomPlan}
               >
-                <Text style={styles.textStyle}>Save Plan</Text>
+                <Text style={styles.textStyle}>Add to Plan</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -355,10 +445,43 @@ const styles = StyleSheet.create({
   settingsButton: {
     padding: 4,
   },
+  deleteButton: {
+    padding: 8,
+  },
+  deleteButtonText: {
+    color: '#FF3B30',
+    fontWeight: '600',
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
+  },
+  // Action Bar
+  actionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+  },
+  addChaptersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.tint,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  addChaptersText: {
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  hintText: {
+    fontSize: 12,
+    color: '#999',
   },
   // Tab Styles
   tabContainer: {
@@ -464,6 +587,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  cardSelected: {
+    backgroundColor: '#f0f0f0',
+    borderColor: Colors.light.tint,
+    borderWidth: 1,
   },
   checkboxContainer: {
     marginRight: 12,
