@@ -945,5 +945,25 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 4,
   },
+  modalViewFull: {
+    height: '80%',
+    padding: 0,
+  },
+  selectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  selectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
 });
 
