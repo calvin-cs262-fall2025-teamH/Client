@@ -5,18 +5,19 @@ import * as Calendar from 'expo-calendar';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { HelpTooltip } from '@/components/HelpTooltip';
 
 type ViewMode = 'month' | 'week' | 'day';
 
@@ -590,6 +591,16 @@ export default function CalendarScreen() {
             <TouchableOpacity onPress={goToToday} style={styles.todayButton}>
               <Text style={styles.todayButtonText}>Today</Text>
             </TouchableOpacity>
+            <HelpTooltip
+              title="Calendar Help"
+              tips={[
+                'Switch between Month, Week, and Day views',
+                'Tap a date to see events for that day',
+                'Use the + button to create new events',
+                'Tap the sync icon to add events to your phone calendar',
+              ]}
+              iconColor="#fff"
+            />
             <TouchableOpacity onPress={syncToPhoneCalendar} style={styles.syncButton}>
               <Ionicons name="sync" size={20} color="#fff" />
             </TouchableOpacity>

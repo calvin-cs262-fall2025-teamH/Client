@@ -4,6 +4,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIn
 import { Ionicons } from '@expo/vector-icons';
 import { usePartner } from '@/contexts/PartnerContext';
 import { api } from '@/lib/api';
+import { HelpTooltip } from '@/components/HelpTooltip';
 
 export function HomeScreen() {
   const [selectedEmoji, setSelectedEmoji] = useState('😭');
@@ -97,9 +98,21 @@ export function HomeScreen() {
     <View style={styles.container}>
       {/* Modern gradient header */}
       <View style={styles.gradientHeader}>
-        <View style={styles.headerContent}>
-          <Text style={styles.appName}>CoupleBond</Text>
-          <Text style={styles.tagline}>Stay connected with your partner</Text>
+        <View style={styles.headerTopRow}>
+          <View style={styles.headerPlaceholder} />
+          <View style={styles.headerContent}>
+            <Text style={styles.appName}>CoupleBond</Text>
+            <Text style={styles.tagline}>Stay connected with your partner</Text>
+          </View>
+          <HelpTooltip
+            title="Home Help"
+            tips={[
+              'Tap your emoji to change how you\'re feeling',
+              'Tap your profile card to edit your information',
+              'Use the feature cards below to access different tools',
+              'Pull down to refresh and sync with your partner',
+            ]}
+          />
         </View>
       </View>
 
@@ -272,8 +285,18 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  headerPlaceholder: {
+    width: 40,
+  },
   headerContent: {
     alignItems: 'center',
+    flex: 1,
   },
   appName: {
     fontSize: 36,
