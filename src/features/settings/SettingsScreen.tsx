@@ -1,7 +1,7 @@
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import { usePartner } from '@/contexts/PartnerContext';
-import { Ionicons } from '@expo/vector-icons';
+import { ThemedBackground } from '@/components/ThemedBackground';
 
 export function SettingsScreen() {
   const { hasPartner, unmatchPartner } = usePartner();
@@ -64,14 +64,12 @@ export function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <View style={styles.headerPlaceholder} />
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.container}>
+    <ThemedBackground>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>⚙️ Settings</Text>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
@@ -90,6 +88,11 @@ export function SettingsScreen() {
             </View>
             <Text style={styles.menuText}>Help</Text>
             <Ionicons name="chevron-forward" size={20} color="#95a5a6" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/background-settings')}>
+            <Text style={styles.menuIcon}>🎨</Text>
+            <Text style={styles.menuText}>Change Background</Text>
           </TouchableOpacity>
 
           {hasPartner && (
@@ -148,14 +151,18 @@ export function SettingsScreen() {
           <Text style={styles.footerSubtext}>Stay connected with your partner ❤️</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ThemedBackground>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fafafa',
+  },
+  container: {
+    flexGrow: 1,
+    padding: 20,
   },
   header: {
     backgroundColor: '#8B2332',

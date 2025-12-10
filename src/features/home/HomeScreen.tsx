@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator
 import { Ionicons } from '@expo/vector-icons';
 import { usePartner } from '@/contexts/PartnerContext';
 import { api } from '@/lib/api';
-import { HelpTooltip } from '@/components/HelpTooltip';
+import { ThemedBackground } from '@/components/ThemedBackground';
 
 export function HomeScreen() {
   const [selectedEmoji, setSelectedEmoji] = useState('😭');
@@ -95,24 +95,27 @@ export function HomeScreen() {
   ]), []);
 
   return (
-    <View style={styles.container}>
-      {/* Modern gradient header */}
-      <View style={styles.gradientHeader}>
-        <View style={styles.headerTopRow}>
-          <View style={styles.headerPlaceholder} />
-          <View style={styles.headerContent}>
-            <Text style={styles.appName}>CoupleBond</Text>
-            <Text style={styles.tagline}>Stay connected with your partner</Text>
-          </View>
-          <HelpTooltip
-            title="Home Help"
-            tips={[
-              'Tap your emoji to change how you\'re feeling',
-              'Tap your profile card to edit your information',
-              'Use the feature cards below to access different tools',
-              'Pull down to refresh and sync with your partner',
-            ]}
+    <ThemedBackground>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#8B2332']}
+            tintColor="#8B2332"
           />
+        }
+      >
+      <View style={styles.header}>
+        <Text style={styles.appName}>CoupleBond</Text>
+        <Text style={styles.tagline}>Stay connected with your partner ❤️</Text>
+      </View>
+
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B2332" />
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </View>
 
@@ -206,88 +209,29 @@ export function HomeScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
-        )}
-
-        {/* Features section title */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Features</Text>
-          <Text style={styles.sectionSubtitle}>Explore tools to strengthen your bond</Text>
-        </View>
-
-        {/* Modern feature cards */}
-        <View style={styles.featuresGrid}>
-          {featureCards.map((card) => (
-            <TouchableOpacity
-              key={card.title}
-              style={[
-                styles.featureCard,
-                card.disabled && styles.featureCardDisabled,
-                {
-                  backgroundColor: card.gradient[0],
-                  borderLeftWidth: 4,
-                  borderLeftColor: card.color,
-                }
-              ]}
-              onPress={card.action}
-              disabled={card.disabled}
-              activeOpacity={0.8}
-            >
-              <View style={styles.featureCardHeader}>
-                <View style={[styles.featureIconCircle, { backgroundColor: card.color }]}>
-                  <Ionicons
-                    name={card.icon}
-                    size={28}
-                    color="#fff"
-                  />
-                </View>
-                {card.disabled && (
-                  <View style={styles.comingSoonBadge}>
-                    <Text style={styles.comingSoonText}>Soon</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={[styles.featureCardTitle, card.disabled && styles.featureCardTitleDisabled]}>
-                {card.title}
-              </Text>
-              <Text style={[styles.featureCardSubtitle, card.disabled && styles.featureCardSubtitleDisabled]}>
-                {card.subtitle}
-              </Text>
-              <View style={styles.featureCardArrow}>
-                <Ionicons name="arrow-forward" size={18} color={card.disabled ? '#999' : card.color} />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Bottom spacing */}
-        <View style={styles.bottomSpacing} />
+            <Text style={[
+              styles.featureTitle,
+              card.disabled && styles.featureTitleDisabled
+            ]}>
+              {card.title}
+            </Text>
+            <Text style={[
+              styles.featureSubtitle,
+              card.disabled && styles.featureSubtitleDisabled
+            ]}>
+              {card.subtitle}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       </ScrollView>
-    </View>
+    </ThemedBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fafafa',
-  },
-  gradientHeader: {
-    backgroundColor: '#8B2332',
-    paddingTop: 60,
-    paddingBottom: 30,
-    paddingHorizontal: 24,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  container: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  header: {
     alignItems: 'center',
     marginBottom: 10,
   },
