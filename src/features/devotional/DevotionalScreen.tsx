@@ -19,8 +19,10 @@ import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { DevotionalPlan } from '@/types/api';
 import { Colors } from '@/constants/theme';
+import { BIBLE_BOOKS } from '@/constants/bibleData';
 
 type Mode = 'couple' | 'year';
+type SelectionType = 'startBook' | 'startChapter' | 'endBook' | 'endChapter' | null;
 
 export function DevotionalScreen() {
   const [plans, setPlans] = useState<DevotionalPlan[]>([]);
@@ -35,11 +37,14 @@ export function DevotionalScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
 
   // Custom Plan Form State
-  const [startBook, setStartBook] = useState('Genesis');
-  const [startChapter, setStartChapter] = useState('1');
-  const [endBook, setEndBook] = useState('Genesis');
-  const [endChapter, setEndChapter] = useState('10');
-  const [chaptersPerDay, setChaptersPerDay] = useState('1');
+  const [startBook, setStartBook] = useState(BIBLE_BOOKS[0]);
+  const [startChapter, setStartChapter] = useState(1);
+  const [endBook, setEndBook] = useState(BIBLE_BOOKS[0]);
+  const [endChapter, setEndChapter] = useState(10);
+  const [chaptersPerDay, setChaptersPerDay] = useState(1);
+  
+  // Selection Modal State
+  const [selectionType, setSelectionType] = useState<SelectionType>(null);
 
   const loadDevotionals = useCallback(async () => {
     try {
@@ -68,11 +73,11 @@ export function DevotionalScreen() {
   const handleAppendCustomPlan = async () => {
     try {
       await api.appendCustomPlan({
-        start_book: startBook,
-        start_chapter: parseInt(startChapter),
-        end_book: endBook,
-        end_chapter: parseInt(endChapter),
-        chapters_per_day: parseInt(chaptersPerDay),
+        start_book: startBook.name,
+        start_chapter: startChapter,
+        end_book: endBook.name,
+        end_chapter: endChapter,
+        chapters_per_day: chaptersPerDay,
       });
       setShowCustomModal(false);
       Alert.alert('Success', 'Chapters added to your plan!');
@@ -353,69 +358,136 @@ export function DevotionalScreen() {
         visible={showCustomModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowCustomModal(false)}
+        onRequestClose={() => {
+          if (selectionType) {
+            setSelectionType(null);
+          } else {
+            setShowCustomModal(false);
+          }
+        }}
       >
         <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>Add Readings</Text>
+          <View style={[styles.modalView, selectionType && styles.modalViewFull]}>
+            {selectionType ? (
+              <View style={{ flex: 1 }}>
+                <View style={styles.selectionHeader}>
+                  <TouchableOpacity onPress={() => setSelectionType(null)} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={24} color="#333" />
+                  </TouchableOpacity>
+                  <Text style={styles.selectionTitle}>
+                    Select {selectionType.includes('Book') ? 'Book' : 'Chapter'}
+                  </Text>
+                </View>
+                <FlatList
+                  data={
+                    selectionType === 'startBook' || selectionType === 'endBook'
+                      ? BIBLE_BOOKS
+                      : Array.from({ length: (selectionType === 'startChapter' ? startBook.chapters : endBook.chapters) }, (_, i) => i + 1)
+                  }
+                  keyExtractor={(item) => (typeof item === 'number' ? item.toString() : item.name)}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.selectionItem}
+                      onPress={() => {
+                        if (selectionType === 'startBook') {
+                          setStartBook(item as any);
+                          setStartChapter(1);
+                          setEndBook(item as any);
+                          setEndChapter(1);
+                        } else if (selectionType === 'endBook') {
+                          setEndBook(item as any);
+                          setEndChapter(1);
+                        } else if (selectionType === 'startChapter') {
+                          setStartChapter(item as number);
+                        } else if (selectionType === 'endChapter') {
+                          setEndChapter(item as number);
+                        }
+                        setSelectionType(null);
+                      }}
+                    >
+                      <Text style={styles.selectionItemText}>
+                        {typeof item === 'number' ? `Chapter ${item}` : item.name}
+                      </Text>
+                      {typeof item !== 'number' && (
+                        <Text style={styles.selectionItemSubtext}>{item.chapters} chapters</Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            ) : (
+              <>
+                <Text style={styles.modalText}>Add Readings</Text>
 
-            <Text style={styles.label}>Start Book</Text>
-            <TextInput
-              style={styles.input}
-              value={startBook}
-              onChangeText={setStartBook}
-              placeholder="e.g. Genesis"
-            />
+                <Text style={styles.label}>Start Reading</Text>
+                <View style={styles.row}>
+                  <TouchableOpacity 
+                    style={[styles.selector, { flex: 2, marginRight: 8 }]} 
+                    onPress={() => setSelectionType('startBook')}
+                  >
+                    <Text style={styles.selectorText}>{startBook.name}</Text>
+                    <Ionicons name="chevron-down" size={16} color="#666" />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.selector, { flex: 1 }]} 
+                    onPress={() => setSelectionType('startChapter')}
+                  >
+                    <Text style={styles.selectorText}>Ch {startChapter}</Text>
+                    <Ionicons name="chevron-down" size={16} color="#666" />
+                  </TouchableOpacity>
+                </View>
 
-            <Text style={styles.label}>Start Chapter</Text>
-            <TextInput
-              style={styles.input}
-              value={startChapter}
-              onChangeText={setStartChapter}
-              keyboardType="numeric"
-              placeholder="1"
-            />
+                <Text style={styles.label}>End Reading</Text>
+                <View style={styles.row}>
+                  <TouchableOpacity 
+                    style={[styles.selector, { flex: 2, marginRight: 8 }]} 
+                    onPress={() => setSelectionType('endBook')}
+                  >
+                    <Text style={styles.selectorText}>{endBook.name}</Text>
+                    <Ionicons name="chevron-down" size={16} color="#666" />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.selector, { flex: 1 }]} 
+                    onPress={() => setSelectionType('endChapter')}
+                  >
+                    <Text style={styles.selectorText}>Ch {endChapter}</Text>
+                    <Ionicons name="chevron-down" size={16} color="#666" />
+                  </TouchableOpacity>
+                </View>
 
-            <Text style={styles.label}>End Book</Text>
-            <TextInput
-              style={styles.input}
-              value={endBook}
-              onChangeText={setEndBook}
-              placeholder="e.g. Genesis"
-            />
+                <Text style={styles.label}>Chapters per Day</Text>
+                <View style={styles.stepperContainer}>
+                  <TouchableOpacity 
+                    style={styles.stepperButton}
+                    onPress={() => setChaptersPerDay(Math.max(1, chaptersPerDay - 1))}
+                  >
+                    <Ionicons name="remove" size={24} color={Colors.light.tint} />
+                  </TouchableOpacity>
+                  <Text style={styles.stepperValue}>{chaptersPerDay}</Text>
+                  <TouchableOpacity 
+                    style={styles.stepperButton}
+                    onPress={() => setChaptersPerDay(chaptersPerDay + 1)}
+                  >
+                    <Ionicons name="add" size={24} color={Colors.light.tint} />
+                  </TouchableOpacity>
+                </View>
 
-            <Text style={styles.label}>End Chapter</Text>
-            <TextInput
-              style={styles.input}
-              value={endChapter}
-              onChangeText={setEndChapter}
-              keyboardType="numeric"
-              placeholder="10"
-            />
-
-            <Text style={styles.label}>Chapters per Day</Text>
-            <TextInput
-              style={styles.input}
-              value={chaptersPerDay}
-              onChangeText={setChaptersPerDay}
-              keyboardType="numeric"
-              placeholder="1"
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.buttonClose]}
-                onPress={() => setShowCustomModal(false)}
-              >
-                <Text style={styles.textStyle}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.buttonSave]}
-                onPress={handleAppendCustomPlan}
-              >
-                <Text style={styles.textStyle}>Add to Plan</Text>
-              </TouchableOpacity>
-            </View>
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.buttonClose]}
+                    onPress={() => setShowCustomModal(false)}
+                  >
+                    <Text style={styles.textStyle}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.buttonSave]}
+                    onPress={handleAppendCustomPlan}
+                  >
+                    <Text style={styles.textStyle}>Add to Plan</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -432,248 +504,293 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 16,
+    paddingBottom: 20,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    zIndex: 10,
   },
   backButton: {
-    padding: 4,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
   },
   settingsButton: {
-    padding: 4,
-  },
-  deleteButton: {
     padding: 8,
   },
+  deleteButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#FFE5E5',
+    borderRadius: 16,
+  },
   deleteButtonText: {
-    color: '#FF3B30',
+    color: '#D32F2F',
     fontWeight: '600',
+    fontSize: 14,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    letterSpacing: 0.5,
   },
   // Action Bar
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   addChaptersButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.tint,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   addChaptersText: {
     color: '#fff',
     fontWeight: '600',
     marginLeft: 8,
+    fontSize: 14,
   },
   hintText: {
     fontSize: 12,
-    color: '#999',
+    color: '#888',
+    fontStyle: 'italic',
   },
   // Tab Styles
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#F0F0F0',
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    borderRadius: 20,
+    marginHorizontal: 4,
   },
   activeTab: {
-    borderBottomColor: Colors.light.tint,
+    backgroundColor: '#FFF0F3', // Light maroon background
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#666',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   activeTabText: {
     color: Colors.light.tint,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   // Empty State
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    padding: 40,
   },
   emptyStateText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#333',
-    marginTop: 16,
+    marginTop: 20,
+    marginBottom: 8,
   },
   emptyStateSubtext: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 24,
+    lineHeight: 24,
+    marginBottom: 32,
   },
   setupButton: {
     backgroundColor: Colors.light.tint,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 30,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
   setupButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 16,
   },
   progressContainer: {
     backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 12,
   },
   progressTextRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
+    alignItems: 'flex-end',
   },
   progressLabel: {
     fontSize: 14,
     color: '#666',
-    fontWeight: '500',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   progressValue: {
-    fontSize: 14,
+    fontSize: 16,
     color: Colors.light.tint,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   progressBarBg: {
-    height: 8,
-    backgroundColor: '#eee',
-    borderRadius: 4,
+    height: 10,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 5,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: Colors.light.tint,
-    borderRadius: 4,
+    borderRadius: 5,
   },
   listContent: {
-    padding: 16,
+    padding: 20,
+    paddingBottom: 40,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   cardSelected: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#FFF9FA',
     borderColor: Colors.light.tint,
-    borderWidth: 1,
   },
   checkboxContainer: {
-    marginRight: 12,
+    marginRight: 16,
   },
   cardContent: {
     flex: 1,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 6,
   },
   completedText: {
     textDecorationLine: 'line-through',
     color: '#999',
   },
   cardReference: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 15,
+    color: Colors.light.gold, // Using gold for reference
+    fontWeight: '600',
   },
   // Custom Plan Modal Styles
   centeredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   modalView: {
-    width: '85%',
+    width: '90%',
     backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 24,
+    padding: 32,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 24,
     textAlign: 'center',
+    color: '#1A1A1A',
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '700',
+    color: '#444',
     marginBottom: 8,
-    marginTop: 8,
+    marginTop: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    padding: 14,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#FAFAFA',
+    color: '#333',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 24,
+    marginTop: 32,
+    gap: 12,
   },
   button: {
-    borderRadius: 12,
-    padding: 12,
-    elevation: 2,
+    borderRadius: 14,
+    paddingVertical: 14,
+    elevation: 0,
     flex: 1,
-    marginHorizontal: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonClose: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#F5F5F5',
   },
   buttonSave: {
     backgroundColor: Colors.light.tint,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   textStyle: {
     color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: '700',
+    fontSize: 16,
   },
   // Modal Styles
   modalContainer: {
@@ -681,12 +798,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   modalHeader: {
-    padding: 16,
+    padding: 20,
     alignItems: 'flex-end',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   closeButton: {
-    fontSize: 16,
-    color: '#007AFF',
+    fontSize: 17,
+    color: Colors.light.tint,
     fontWeight: '600',
   },
   modalContent: {
@@ -694,68 +813,137 @@ const styles = StyleSheet.create({
   },
   modalDay: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.light.gold,
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 8,
+    letterSpacing: 1.5,
+    marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1A1A1A',
     marginBottom: 8,
+    lineHeight: 40,
   },
   modalReference: {
-    fontSize: 18,
-    color: Colors.light.tint,
-    marginBottom: 32,
+    fontSize: 20,
+    color: '#666',
+    marginBottom: 40,
+    fontWeight: '500',
   },
   scriptureBox: {
-    backgroundColor: '#F8F9FA',
-    padding: 24,
-    borderRadius: 16,
-    marginBottom: 32,
+    backgroundColor: '#FFF9FA', // Very light maroon tint
+    padding: 28,
+    borderRadius: 20,
+    marginBottom: 40,
     borderLeftWidth: 4,
     borderLeftColor: Colors.light.tint,
   },
   scriptureText: {
     fontSize: 18,
-    lineHeight: 28,
-    color: '#444',
+    lineHeight: 30,
+    color: '#2C2C2C',
     fontStyle: 'italic',
+    fontFamily: 'serif', // Use serif for scripture if available
   },
   reflectionBox: {
-    marginBottom: 32,
+    marginBottom: 40,
   },
   reflectionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 12,
   },
   reflectionText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#666',
+    fontSize: 17,
+    lineHeight: 28,
+    color: '#444',
   },
   markButton: {
     backgroundColor: Colors.light.tint,
-    paddingVertical: 16,
+    paddingVertical: 18,
     borderRadius: 30,
     alignItems: 'center',
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
+    marginBottom: 40,
   },
   markButtonCompleted: {
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   markButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   markButtonTextCompleted: {
-    color: '#666',
+    color: '#888',
+  },
+  // New Selector Styles
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  selector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FAFAFA',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    padding: 14,
+  },
+  selectorText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FAFAFA',
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  stepperButton: {
+    padding: 8,
+  },
+  stepperValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333',
+    marginHorizontal: 24,
+    minWidth: 30,
+    textAlign: 'center',
+  },
+  selectionItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  selectionItemText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  selectionItemSubtext: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
   },
 });
 
