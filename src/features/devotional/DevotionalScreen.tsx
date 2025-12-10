@@ -35,6 +35,7 @@ export function DevotionalScreen() {
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   // Custom Plan Form State
   const [startBook, setStartBook] = useState(BIBLE_BOOKS[0]);
@@ -84,6 +85,14 @@ export function DevotionalScreen() {
       loadDevotionals();
     } catch (error) {
       Alert.alert('Error', 'Failed to add chapters');
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.size === plans.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(plans.map(p => p.id)));
     }
   };
 
@@ -165,6 +174,9 @@ export function DevotionalScreen() {
 
   const completedCount = plans.filter(p => p.is_completed).length;
   const progress = plans.length > 0 ? completedCount / plans.length : 0;
+  
+  const activePlans = plans.filter(p => !p.is_completed);
+  const completedPlans = plans.filter(p => p.is_completed);
 
   const renderItem = ({ item }: { item: DevotionalPlan }) => {
     const isSelected = selectedItems.has(item.id);
@@ -212,6 +224,11 @@ export function DevotionalScreen() {
             Day {item.day_number}: {item.title}
           </Text>
           <Text style={styles.cardReference}>{item.reference}</Text>
+          <Text style={styles.cardVerse} numberOfLines={2}>
+            {item.scripture_text && item.scripture_text !== item.reference 
+              ? item.scripture_text 
+              : "Thy word is a lamp unto my feet, and a light unto my path."}
+          </Text>
         </View>
 
         {!selectionMode && <Ionicons name="chevron-forward" size={20} color="#ccc" />}
@@ -227,9 +244,16 @@ export function DevotionalScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Daily Bread</Text>
         {mode === 'year' && selectionMode ? (
-          <TouchableOpacity onPress={handleDeleteSelected} style={styles.deleteButton}>
-            <Text style={styles.deleteButtonText}>Delete ({selectedItems.size})</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity onPress={handleSelectAll} style={[styles.deleteButton, { backgroundColor: '#E3F2FD' }]}>
+              <Text style={[styles.deleteButtonText, { color: '#1976D2' }]}>
+                {selectedItems.size === plans.length ? 'Deselect All' : 'Select All'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDeleteSelected} style={styles.deleteButton}>
+              <Text style={styles.deleteButtonText}>Delete ({selectedItems.size})</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <View style={{ width: 24 }} />
         )}
@@ -290,12 +314,40 @@ export function DevotionalScreen() {
         </View>
       ) : (
         <FlatList
-          data={plans}
+          data={activePlans}
           renderItem={renderItem}
           keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListFooterComponent={
+            completedPlans.length > 0 ? (
+              <View style={{ marginTop: 20 }}>
+                <TouchableOpacity 
+                  style={styles.completedHeader} 
+                  onPress={() => setShowCompleted(!showCompleted)}
+                >
+                  <Text style={styles.completedHeaderText}>
+                    Completed ({completedPlans.length})
+                  </Text>
+                  <Ionicons 
+                    name={showCompleted ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color="#666" 
+                  />
+                </TouchableOpacity>
+                {showCompleted && (
+                  <View>
+                    {completedPlans.map(item => (
+                      <View key={item.id} style={{ marginBottom: 16 }}>
+                        {renderItem({ item })}
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ) : null
           }
         />
       )}
@@ -964,6 +1016,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#1A1A1A',
+  },
+  cardVerse: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  completedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  completedHeaderText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
   },
 });
 
