@@ -12,6 +12,11 @@ import {
   View,
   SafeAreaView,
   StatusBar,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import MasonryList from '@react-native-seoul/masonry-list';
 import ImageViewing from 'react-native-image-viewing';
@@ -38,6 +43,14 @@ export function MemoryDetailScreen() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [liked, setLiked] = useState(false);
 
+  // Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [saving, setSaving] = useState(false);
+
   const likeScale = useSharedValue(1);
 
   const loadActivity = useCallback(async () => {
@@ -45,7 +58,13 @@ export function MemoryDetailScreen() {
     try {
       setLoading(true);
       const response = await api.getActivity(parseInt(id));
-      setActivity(response.data || null);
+      if (response.data) {
+        setActivity(response.data);
+        setEditTitle(response.data.title);
+        setEditDescription(response.data.description || '');
+        setEditDate(response.data.date.split('T')[0]);
+        setEditLocation(response.data.location || '');
+      }
     } catch (error: unknown) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load activity');
       router.back();
@@ -53,6 +72,76 @@ export function MemoryDetailScreen() {
       setLoading(false);
     }
   }, [id]);
+
+  const handleDeletePhoto = async (photoIndex: number) => {
+    if (!activity || !activity.photos[photoIndex]) return;
+
+    const photo = activity.photos[photoIndex];
+
+    Alert.alert(
+      'Delete Photo',
+      'Are you sure you want to delete this photo?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Don't set full screen loading, maybe just show a toast or something?
+              // But for now, let's just do it.
+              await api.deletePhoto(activity.id, photo.id);
+
+              // Update local state
+              const updatedPhotos = [...activity.photos];
+              updatedPhotos.splice(photoIndex, 1);
+              setActivity({ ...activity, photos: updatedPhotos });
+
+              // If we deleted the last photo, close the viewer
+              if (updatedPhotos.length === 0) {
+                setIsImageViewVisible(false);
+              } else if (photoIndex >= updatedPhotos.length) {
+                // If we deleted the last item, move index back
+                setCurrentImageIndex(updatedPhotos.length - 1);
+              }
+
+              // Alert.alert('Success', 'Photo deleted'); // Optional, maybe too intrusive
+            } catch (error: unknown) {
+              Alert.alert('Error', 'Failed to delete photo');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUpdate = async () => {
+    if (!activity) return;
+    if (!editTitle.trim()) {
+      Alert.alert('Error', 'Title is required');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const response = await api.updateActivity(activity.id, {
+        title: editTitle,
+        description: editDescription,
+        date: new Date(editDate).toISOString(),
+        location: editLocation,
+      });
+
+      if (response.success && response.data) {
+        setActivity(prev => prev ? { ...prev, ...response.data! } : null);
+        setIsEditing(false);
+        Alert.alert('Success', 'Memory updated successfully');
+      }
+    } catch (error: unknown) {
+      Alert.alert('Error', 'Failed to update memory');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     loadActivity();
@@ -213,6 +302,8 @@ export function MemoryDetailScreen() {
           setCurrentImageIndex(i);
           setIsImageViewVisible(true);
         }}
+        onLongPress={() => handleDeletePhoto(i)}
+        delayLongPress={500}
       >
         <Image source={{ uri: item.photoUrl }} style={styles.photo} />
       </TouchableOpacity>
@@ -239,6 +330,9 @@ export function MemoryDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={THEME.text} />
         </TouchableOpacity>
         <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.iconButton}>
+            <Ionicons name="pencil-outline" size={24} color={THEME.text} />
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleLike} style={styles.iconButton}>
             <Animated.View style={likeAnimatedStyle}>
               <Ionicons
@@ -293,9 +387,16 @@ export function MemoryDetailScreen() {
         swipeToCloseEnabled={true}
         doubleTapToZoomEnabled={true}
         FooterComponent={({ imageIndex }: { imageIndex: number }) => (
-          <View style={styles.footerContainer}>
+          <SafeAreaView style={styles.footerContainer}>
             <Text style={styles.footerText}>{imageIndex + 1} / {images.length}</Text>
-          </View>
+            <TouchableOpacity
+              style={styles.deletePhotoButton}
+              onPress={() => handleDeletePhoto(imageIndex)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="trash-outline" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </SafeAreaView>
         )}
       />
 
@@ -310,6 +411,76 @@ export function MemoryDetailScreen() {
           <Ionicons name="camera" size={28} color="#FFF" />
         )}
       </TouchableOpacity>
+
+      {/* Edit Modal */}
+      <Modal
+        visible={isEditing}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsEditing(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Memory</Text>
+              <TouchableOpacity onPress={() => setIsEditing(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalForm}>
+              <Text style={styles.label}>Title</Text>
+              <TextInput
+                style={styles.input}
+                value={editTitle}
+                onChangeText={setEditTitle}
+                placeholder="Title"
+              />
+
+              <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.input}
+                value={editDate}
+                onChangeText={setEditDate}
+                placeholder="YYYY-MM-DD"
+              />
+
+              <Text style={styles.label}>Location</Text>
+              <TextInput
+                style={styles.input}
+                value={editLocation}
+                onChangeText={setEditLocation}
+                placeholder="Location"
+              />
+
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={editDescription}
+                onChangeText={setEditDescription}
+                placeholder="Description"
+                multiline
+                numberOfLines={4}
+              />
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleUpdate}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveButtonText}>Save Changes</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -409,14 +580,81 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   footerContainer: {
-    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 40,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    width: '100%',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   footerText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  deletePhotoButton: {
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+  },
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    height: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalForm: {
+    flex: 1,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  saveButton: {
+    backgroundColor: THEME.primary,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

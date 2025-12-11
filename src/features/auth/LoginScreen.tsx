@@ -9,22 +9,37 @@ export function LoginScreen() {
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Login Requirement', 'Please enter both email and password.');
+      return;
+    }
+
     try {
       await api.login(email, password);
       await new Promise(resolve => setTimeout(resolve, 100));
       Alert.alert('Success', 'Logged in!');
       router.replace('/(tabs)');
     } catch (err: unknown) {
-      Alert.alert('Login Failure', err instanceof Error ? err.message : 'invalid password or email！');
+      Alert.alert('Login Failed', err instanceof Error ? err.message : 'Invalid password or email!');
     }
   };
 
   const handleRegister = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Registration Requirement', 'Please enter both email and password.');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Registration Requirement', 'Password must be at least 6 characters long.');
+      return;
+    }
+
     try {
       await api.register(email, password);
       Alert.alert('Register Success', 'Account created! You can now login.');
     } catch (err: unknown) {
-      Alert.alert('Register Failure', err instanceof Error ? err.message : 'email might be used!');
+      Alert.alert('Register Failure', err instanceof Error ? err.message : 'Email might be used!');
     }
   };
 
