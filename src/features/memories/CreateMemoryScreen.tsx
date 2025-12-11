@@ -10,8 +10,14 @@ import {
   TouchableOpacity,
   View,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+
+// Firebase Config (Hardcoded for now, ideally should be in env)
+const FIREBASE_STORAGE_BUCKET = "couplebond-5505f.firebasestorage.app";
 
 export function CreateMemoryScreen() {
   const [title, setTitle] = useState('');
@@ -19,6 +25,84 @@ export function CreateMemoryScreen() {
   const [location, setLocation] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+
+  const pickImages = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant photo library permissions to upload photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        const newPhotos = result.assets.map(asset => asset.uri);
+        setSelectedPhotos(prev => [...prev, ...newPhotos]);
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to pick images');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant camera permissions to take photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setSelectedPhotos(prev => [...prev, result.assets[0].uri]);
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImageToFirebase = async (uri: string): Promise<string> => {
+    const filename = uri.substring(uri.lastIndexOf('/') + 1);
+    const encodedFilename = encodeURIComponent(filename);
+    const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o?name=${encodedFilename}`;
+
+    const fileInfo = await FileSystem.getInfoAsync(uri);
+    if (!fileInfo.exists) {
+      throw new Error('File does not exist');
+    }
+
+    const fileContent = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'image/jpeg',
+      },
+      body: Buffer.from(fileContent, 'base64'),
+    });
+
+    if (!response.ok) {
+      throw new Error('Firebase upload failed');
+    }
+
+    return `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o/${encodedFilename}?alt=media`;
+  };
 
   const handleCreate = async () => {
     if (!title.trim()) {
@@ -28,12 +112,36 @@ export function CreateMemoryScreen() {
 
     try {
       setLoading(true);
-      await api.createActivity({
+
+      // 1. Create the Activity
+      const activityResponse = await api.createActivity({
         title: title.trim(),
         description: description.trim() || undefined,
         location: location.trim() || undefined,
         date: new Date(date).toISOString(),
       });
+
+      if (!activityResponse.success || !activityResponse.data) {
+        throw new Error('Failed to create memory record');
+      }
+
+      const activityId = activityResponse.data.id;
+
+      // 2. Upload Photos (if any)
+      if (selectedPhotos.length > 0) {
+        // Upload all photos in parallel
+        const uploadPromises = selectedPhotos.map(async (photoUri) => {
+          try {
+            const downloadUrl = await uploadImageToFirebase(photoUri);
+            await api.addPhoto(activityId, { photoUrl: downloadUrl });
+          } catch (err) {
+            console.error('Failed to upload photo:', err);
+            // Continue even if one photo fails
+          }
+        });
+
+        await Promise.all(uploadPromises);
+      }
 
       Alert.alert('Success', 'Memory created successfully!', [
         {
@@ -92,6 +200,40 @@ export function CreateMemoryScreen() {
 
           <View style={styles.inputGroup}>
             <View style={styles.labelRow}>
+              <Ionicons name="images" size={16} color="#8B2332" />
+              <Text style={styles.label}>Photos</Text>
+            </View>
+
+            <View style={styles.photoButtons}>
+              <TouchableOpacity style={styles.photoButton} onPress={pickImages}>
+                <Ionicons name="images-outline" size={24} color="#8B2332" />
+                <Text style={styles.photoButtonText}>Gallery</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
+                <Ionicons name="camera-outline" size={24} color="#8B2332" />
+                <Text style={styles.photoButtonText}>Camera</Text>
+              </TouchableOpacity>
+            </View>
+
+            {selectedPhotos.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoPreviewList}>
+                {selectedPhotos.map((uri, index) => (
+                  <View key={index} style={styles.photoPreviewContainer}>
+                    <Image source={{ uri }} style={styles.photoPreview} />
+                    <TouchableOpacity
+                      style={styles.removePhotoButton}
+                      onPress={() => removePhoto(index)}
+                    >
+                      <Ionicons name="close-circle" size={20} color="#FF3B30" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <View style={styles.labelRow}>
               <Ionicons name="location" size={16} color="#8B2332" />
               <Text style={styles.label}>Location</Text>
             </View>
@@ -136,7 +278,7 @@ export function CreateMemoryScreen() {
           <View style={styles.noteContainer}>
             <Ionicons name="information-circle-outline" size={16} color="#7f8c8d" />
             <Text style={styles.note}>
-              You can add photos to this memory after creating it.
+              Photos will be uploaded automatically when you create the memory.
             </Text>
           </View>
         </View>
@@ -265,5 +407,53 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: '#7f8c8d',
+  },
+  photoButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  photoButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8e5e8',
+    padding: 12,
+    borderRadius: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#f1c0c6',
+  },
+  photoButtonText: {
+    color: '#8B2332',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  photoPreviewList: {
+    marginTop: 8,
+  },
+  photoPreviewContainer: {
+    marginRight: 12,
+    position: 'relative',
+  },
+  photoPreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
 });

@@ -26,7 +26,7 @@ import type {
 import * as SecureStore from "expo-secure-store";
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.94.158:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://192.168.7.148:4000";
 
 console.log('[api] BASE URL configured as:', BASE);
 
@@ -69,7 +69,9 @@ async function http<T>(path: string, options: RequestInit = {}): Promise<ApiResp
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+      const error = new Error(data?.error || data?.message || `HTTP ${res.status}`);
+      (error as { status?: number }).status = res.status;
+      throw error;
     }
     return data as ApiResponse<T>;
   } catch (error: unknown) {
@@ -78,7 +80,14 @@ async function http<T>(path: string, options: RequestInit = {}): Promise<ApiResp
       console.error(`[http] Request timeout after 30s for ${path}`);
       throw new Error('Request timed out. Please check your connection and try again.');
     }
-    console.error(`[http] Fetch error for ${path}:`, error.message);
+
+    // Don't log 4xx errors as console.error (avoid scary logs for invalid password etc)
+    const status = (error as { status?: number }).status;
+    if (status && status >= 400 && status < 500) {
+      console.log(`[http] Client error ${status} for ${path}: ${(error as Error).message}`);
+    } else {
+      console.error(`[http] Fetch error for ${path}:`, (error as Error).message);
+    }
     throw error;
   }
 }
@@ -235,6 +244,13 @@ export const api = {
     return authHttp<ActivityWithPhotos>(`/api/activities/${id}`);
   },
 
+  async updateActivity(id: number, data: Partial<CreateActivityRequest>) {
+    return authHttp<Activity>(`/api/activities/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
   async deleteActivity(id: number) {
     return authHttp<void>(`/api/activities/${id}`, {
       method: "DELETE",
@@ -245,6 +261,12 @@ export const api = {
     return authHttp<Photo>(`/api/activities/${activityId}/photos`, {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  },
+
+  async deletePhoto(activityId: number, photoId: number) {
+    return authHttp<void>(`/api/activities/${activityId}/photos/${photoId}`, {
+      method: "DELETE",
     });
   },
 
@@ -381,6 +403,24 @@ export const api = {
   async deleteChecklistItem(reminderId: number, itemId: number) {
     return authHttp<void>(`/api/anniversary-reminders/${reminderId}/checklist/${itemId}`, {
       method: "DELETE",
+    });
+  },
+
+  // ============= Devotional APIs =============
+  async getDevotionals(category: 'couple' | 'year' | 'custom' = 'couple') {
+    return authHttp<DevotionalPlan[]>(`/api/devotionals?category=${category}`);
+  },
+
+  async toggleDevotional(id: number) {
+    return authHttp<ToggleDevotionalResponse>(`/api/devotionals/${id}/toggle`, {
+      method: "POST",
+    });
+  },
+
+  async saveCustomPlan(data: { start_book: string; start_chapter: number; chapters_per_day: number }) {
+    return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom", {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   },
 };
