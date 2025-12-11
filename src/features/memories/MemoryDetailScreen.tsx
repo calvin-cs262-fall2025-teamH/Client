@@ -106,7 +106,7 @@ export function MemoryDetailScreen() {
               }
 
               // Alert.alert('Success', 'Photo deleted'); // Optional, maybe too intrusive
-            } catch (error: unknown) {
+            } catch {
               Alert.alert('Error', 'Failed to delete photo');
             }
           },
@@ -136,7 +136,7 @@ export function MemoryDetailScreen() {
         setIsEditing(false);
         Alert.alert('Success', 'Memory updated successfully');
       }
-    } catch (error: unknown) {
+    } catch {
       Alert.alert('Error', 'Failed to update memory');
     } finally {
       setSaving(false);

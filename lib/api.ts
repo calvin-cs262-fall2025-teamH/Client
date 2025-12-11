@@ -70,11 +70,11 @@ async function http<T>(path: string, options: RequestInit = {}): Promise<ApiResp
 
     if (!res.ok) {
       const error = new Error(data?.error || data?.message || `HTTP ${res.status}`);
-      (error as any).status = res.status;
+      (error as { status?: number }).status = res.status;
       throw error;
     }
     return data as ApiResponse<T>;
-  } catch (error: any) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
       console.error(`[http] Request timeout after 30s for ${path}`);
@@ -82,10 +82,11 @@ async function http<T>(path: string, options: RequestInit = {}): Promise<ApiResp
     }
 
     // Don't log 4xx errors as console.error (avoid scary logs for invalid password etc)
-    if (error.status && error.status >= 400 && error.status < 500) {
-      console.log(`[http] Client error ${error.status} for ${path}: ${error.message}`);
+    const status = (error as { status?: number }).status;
+    if (status && status >= 400 && status < 500) {
+      console.log(`[http] Client error ${status} for ${path}: ${(error as Error).message}`);
     } else {
-      console.error(`[http] Fetch error for ${path}:`, error.message);
+      console.error(`[http] Fetch error for ${path}:`, (error as Error).message);
     }
     throw error;
   }

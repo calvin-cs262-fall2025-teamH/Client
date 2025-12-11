@@ -11,7 +11,6 @@ import {
   View,
   SafeAreaView,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -46,7 +45,7 @@ export function CreateMemoryScreen() {
         const newPhotos = result.assets.map(asset => asset.uri);
         setSelectedPhotos(prev => [...prev, ...newPhotos]);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to pick images');
     }
   };
@@ -67,7 +66,7 @@ export function CreateMemoryScreen() {
       if (!result.canceled) {
         setSelectedPhotos(prev => [...prev, result.assets[0].uri]);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to take photo');
     }
   };
