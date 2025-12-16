@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 
 const isWeb = Platform.OS === 'web';
 const DEFAULT_BASE = __DEV__
-  ? (isWeb ? 'http://localhost:4000' : 'http://153.106.81.183:4000')  // Your computer's IP address (no /api suffix)
+  ? (isWeb ? 'http://localhost:4000' : 'http://153.106.86.219:4000')  // Your computer's IP address (no /api suffix)
   : 'https://your-production-api.com'; // For production
 
 export const API_BASE_URL =

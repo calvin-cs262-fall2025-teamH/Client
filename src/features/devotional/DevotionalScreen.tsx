@@ -18,11 +18,9 @@ import { api } from '@/lib/api';
 import { DevotionalPlan } from '@/types/api';
 import { Colors } from '@/constants/theme';
 import { BIBLE_BOOKS } from '@/constants/bibleData';
-import { HelpTooltip } from '@/components/HelpTooltip';
 
 type Mode = 'couple' | 'year';
 type SelectionType = 'startBook' | 'startChapter' | 'endBook' | 'endChapter' | null;
-type BibleBook = typeof BIBLE_BOOKS[number];
 
 export function DevotionalScreen() {
   const [plans, setPlans] = useState<DevotionalPlan[]>([]);
@@ -255,17 +253,7 @@ export function DevotionalScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <HelpTooltip 
-            title="Daily Bread Help"
-            tips={[
-              "Grow spiritually together with shared devotionals and Bible reading plans.",
-              "Couples Plan: Curated devotionals specifically for couples to read together.",
-              "Bible in Year: A plan to read through the Bible in a year.",
-              "To add chapters to your Bible plan, tap 'Add Chapters'.",
-              "To remove chapters, long press an item to enter selection mode.",
-              "Mark items as read to track your progress together."
-            ]}
-          />
+          <View style={{ width: 24 }} />
         )}
       </View>
 
@@ -449,42 +437,55 @@ export function DevotionalScreen() {
                     Select {selectionType.includes('Book') ? 'Book' : 'Chapter'}
                   </Text>
                 </View>
-                <FlatList
-                  data={
-                    selectionType === 'startBook' || selectionType === 'endBook'
-                      ? BIBLE_BOOKS
-                      : Array.from({ length: (selectionType === 'startChapter' ? startBook.chapters : endBook.chapters) }, (_, i) => i + 1)
-                  }
-                  keyExtractor={(item) => (typeof item === 'number' ? item.toString() : item.name)}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.selectionItem}
-                      onPress={() => {
-                        if (selectionType === 'startBook') {
-                          setStartBook(item as BibleBook);
-                          setStartChapter(1);
-                          setEndBook(item as BibleBook);
-                          setEndChapter(1);
-                        } else if (selectionType === 'endBook') {
-                          setEndBook(item as BibleBook);
-                          setEndChapter(1);
-                        } else if (selectionType === 'startChapter') {
-                          setStartChapter(item as number);
-                        } else if (selectionType === 'endChapter') {
-                          setEndChapter(item as number);
-                        }
-                        setSelectionType(null);
-                      }}
-                    >
-                      <Text style={styles.selectionItemText}>
-                        {typeof item === 'number' ? `Chapter ${item}` : item.name}
-                      </Text>
-                      {typeof item !== 'number' && (
+                                {(selectionType === 'startBook' || selectionType === 'endBook') ? (
+                  <FlatList
+                    data={BIBLE_BOOKS}
+                    keyExtractor={(item) => item.name}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.selectionItem}
+                        onPress={() => {
+                          if (selectionType === 'startBook') {
+                            setStartBook(item);
+                            setStartChapter(1);
+                            setEndBook(item);
+                            setEndChapter(1);
+                          } else {
+                            setEndBook(item);
+                            setEndChapter(1);
+                          }
+                          setSelectionType(null);
+                        }}
+                      >
+                        <Text style={styles.selectionItemText}>{item.name}</Text>
                         <Text style={styles.selectionItemSubtext}>{item.chapters} chapters</Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                />
+                      </TouchableOpacity>
+                    )}
+                  />
+                ) : (
+                  <FlatList
+                    data={Array.from(
+                      { length: selectionType === 'startChapter' ? startBook.chapters : endBook.chapters },
+                      (_, i) => i + 1
+                    )}
+                    keyExtractor={(item) => item.toString()}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.selectionItem}
+                        onPress={() => {
+                          if (selectionType === 'startChapter') {
+                            setStartChapter(item);
+                          } else {
+                            setEndChapter(item);
+                          }
+                          setSelectionType(null);
+                        }}
+                      >
+                        <Text style={styles.selectionItemText}>Chapter {item}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                )}
               </View>
             ) : (
               <>
