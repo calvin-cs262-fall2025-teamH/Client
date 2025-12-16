@@ -163,14 +163,12 @@ export interface ReminderChecklistItem {
 }
 
 export interface CreateChecklistItemRequest {
-  text: string;
-  displayOrder?: number;
+  title: string;
 }
 
 export interface UpdateChecklistItemRequest {
-  text?: string;
+  title?: string;
   isCompleted?: boolean;
-  isEnabled?: boolean;
 }
 
 // ============= Prayer Types =============

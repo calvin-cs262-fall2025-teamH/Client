@@ -134,7 +134,7 @@ export default function AnniversaryRemindersScreen() {
     if (!text) return;
 
     try {
-      const response = await api.createChecklistItem(reminderId, { text });
+      const response = await api.createChecklistItem(reminderId, { title: text });
       if (response.success && response.data) {
         setChecklistItems(prev => ({
           ...prev,
