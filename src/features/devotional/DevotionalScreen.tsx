@@ -18,6 +18,7 @@ import { api } from '@/lib/api';
 import { DevotionalPlan } from '@/types/api';
 import { Colors } from '@/constants/theme';
 import { BIBLE_BOOKS } from '@/constants/bibleData';
+import { HelpTooltip } from '@/components/HelpTooltip';
 
 type Mode = 'couple' | 'year';
 type SelectionType = 'startBook' | 'startChapter' | 'endBook' | 'endChapter' | null;
@@ -254,7 +255,17 @@ export function DevotionalScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={{ width: 24 }} />
+          <HelpTooltip 
+            title="Daily Bread Help"
+            tips={[
+              "Grow spiritually together with shared devotionals and Bible reading plans.",
+              "Couples Plan: Curated devotionals specifically for couples to read together.",
+              "Bible in Year: A plan to read through the Bible in a year.",
+              "To add chapters to your Bible plan, tap 'Add Chapters'.",
+              "To remove chapters, long press an item to enter selection mode.",
+              "Mark items as read to track your progress together."
+            ]}
+          />
         )}
       </View>
 
