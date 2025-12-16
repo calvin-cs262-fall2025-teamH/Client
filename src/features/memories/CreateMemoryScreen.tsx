@@ -1,4 +1,6 @@
 import { api } from '@/lib/api';
+import { uploadImageToFirebase } from '@/lib/firebase-storage';
+import { usePartner } from '@/contexts/PartnerContext';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -14,12 +16,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
-
-// Firebase Config (Hardcoded for now, ideally should be in env)
-const FIREBASE_STORAGE_BUCKET = "couplebond-5505f.firebasestorage.app";
 
 export function CreateMemoryScreen() {
+  const { coupleId } = usePartner();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -75,35 +74,6 @@ export function CreateMemoryScreen() {
     setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadImageToFirebase = async (uri: string): Promise<string> => {
-    const filename = uri.substring(uri.lastIndexOf('/') + 1);
-    const encodedFilename = encodeURIComponent(filename);
-    const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o?name=${encodedFilename}`;
-
-    const fileInfo = await FileSystem.getInfoAsync(uri);
-    if (!fileInfo.exists) {
-      throw new Error('File does not exist');
-    }
-
-    const fileContent = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'image/jpeg',
-      },
-      body: Buffer.from(fileContent, 'base64'),
-    });
-
-    if (!response.ok) {
-      throw new Error('Firebase upload failed');
-    }
-
-    return `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o/${encodedFilename}?alt=media`;
-  };
-
   const handleCreate = async () => {
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter a title');
@@ -132,7 +102,7 @@ export function CreateMemoryScreen() {
         // Upload all photos in parallel
         const uploadPromises = selectedPhotos.map(async (photoUri) => {
           try {
-            const downloadUrl = await uploadImageToFirebase(photoUri);
+            const downloadUrl = await uploadImageToFirebase(photoUri, coupleId || 'memories');
             await api.addPhoto(activityId, { photoUrl: downloadUrl });
           } catch (err) {
             console.error('Failed to upload photo:', err);
