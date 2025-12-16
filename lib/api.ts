@@ -26,7 +26,7 @@ import type {
 import * as SecureStore from "expo-secure-store";
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.82.166:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.81.183:4000";
 
 console.log('[api] BASE URL configured as:', BASE);
 
@@ -421,6 +421,26 @@ export const api = {
     return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom", {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  },
+
+  async appendCustomPlan(data: {
+    start_book: string;
+    start_chapter: number;
+    end_book: string;
+    end_chapter: number;
+    chapters_per_day: number;
+  }) {
+    return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom/append", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteCustomPlanItems(ids: number[]) {
+    return authHttp<{ success: boolean; message: string }>("/api/devotionals/custom/items", {
+      method: "DELETE",
+      body: JSON.stringify({ ids }),
     });
   },
 };
