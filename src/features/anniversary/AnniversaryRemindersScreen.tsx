@@ -90,18 +90,18 @@ export default function AnniversaryRemindersScreen() {
     today.setHours(0, 0, 0, 0);
     const anniversaryDate = new Date(dateString);
     anniversaryDate.setHours(0, 0, 0, 0);
-    
+
     // For recurring reminders, if the date has passed this year, use next year's date
     if (isRecurring) {
       const currentYear = today.getFullYear();
       anniversaryDate.setFullYear(currentYear);
-      
+
       // If the date has already passed this year, move to next year
       if (anniversaryDate < today) {
         anniversaryDate.setFullYear(currentYear + 1);
       }
     }
-    
+
     const daysUntil = Math.ceil(
       (anniversaryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
     );
@@ -147,6 +147,8 @@ export default function AnniversaryRemindersScreen() {
       Alert.alert('Error', 'Failed to add item');
     }
   };
+
+
 
   const handleToggleChecklistItem = async (reminderId: number, itemId: number, currentState: boolean) => {
     try {
@@ -233,156 +235,160 @@ export default function AnniversaryRemindersScreen() {
                 return daysA - daysB;
               })
               .map((reminder) => {
-              const daysUntil = getDaysUntil(reminder.anniversaryDate, reminder.isRecurring);
-              const isExpanded = expandedReminders.has(reminder.id);
-              const items = checklistItems[reminder.id] || [];
-              
-              return (
-                <View 
-                  key={reminder.id} 
-                  style={styles.reminderCard}
-                >
-                  {/* Countdown Badge - Prominent Display */}
-                  {daysUntil >= 0 && (
-                    <View style={[
-                      styles.countdownBadge,
-                      daysUntil === 0 && styles.countdownBadgeToday,
-                      daysUntil > 0 && daysUntil <= 7 && styles.countdownBadgeUrgent,
-                    ]}>
-                      <Text style={[
-                        styles.countdownDays,
-                        daysUntil === 0 && styles.countdownDaysToday,
-                      ]}>
-                        {daysUntil === 0 ? 'TODAY!' : daysUntil}
-                      </Text>
-                      {daysUntil > 0 && (
-                        <Text style={styles.countdownLabel}>
-                          {daysUntil === 1 ? 'day left' : 'days left'}
-                        </Text>
-                      )}
-                    </View>
-                  )}
+                const daysUntil = getDaysUntil(reminder.anniversaryDate, reminder.isRecurring);
+                const isExpanded = expandedReminders.has(reminder.id);
+                const items = checklistItems[reminder.id] || [];
 
-                  <View style={styles.reminderHeader}>
-                    <View style={styles.reminderTitleRow}>
-                      <Text style={styles.reminderTitle}>
-                        {reminder.title}
-                      </Text>
-                      {reminder.isRecurring && (
-                        <Text style={styles.recurringBadge}>
-                          🔄 Yearly
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-
-                  {reminder.description && (
-                    <Text style={styles.reminderDescription}>
-                      {reminder.description}
-                    </Text>
-                  )}
-
-                  <View style={styles.reminderDetails}>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>
-                        📅 Date:
-                      </Text>
-                      <Text style={styles.detailValue}>
-                        {formatDate(reminder.anniversaryDate)}
-                      </Text>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>
-                        ⏰ Remind:
-                      </Text>
-                      <Text style={styles.detailValue}>
-                        {reminder.reminderDaysBefore} days before
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Prepare List Toggle Button */}
-                  <TouchableOpacity
-                    style={styles.prepareListToggle}
-                    onPress={() => toggleExpanded(reminder.id)}
+                return (
+                  <View
+                    key={reminder.id}
+                    style={styles.reminderCard}
                   >
-                    <Text style={styles.prepareListToggleText}>
-                      📋 Prepare List ({items.length})
-                    </Text>
-                    <Text style={styles.prepareListToggleIcon}>
-                      {isExpanded ? '▼' : '▶'}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Expanded Prepare List */}
-                  {isExpanded && (
-                    <View style={styles.prepareListContainer}>
-                      {items.map(item => (
-                        <View key={item.id} style={styles.checklistItem}>
-                          <TouchableOpacity
-                            style={styles.checklistCheckbox}
-                            onPress={() => handleToggleChecklistItem(reminder.id, item.id, item.isCompleted)}
-                          >
-                            <Text style={styles.checklistCheckboxIcon}>
-                              {item.isCompleted ? '☑' : '☐'}
-                            </Text>
-                          </TouchableOpacity>
-                          <Text style={[
-                            styles.checklistItemText,
-                            item.isCompleted && styles.checklistItemCompleted
-                          ]}>
-                            {item.text}
+                    {/* Countdown Badge - Prominent Display */}
+                    {daysUntil >= 0 && (
+                      <View style={[
+                        styles.countdownBadge,
+                        daysUntil === 0 && styles.countdownBadgeToday,
+                        daysUntil > 0 && daysUntil <= 7 && styles.countdownBadgeUrgent,
+                      ]}>
+                        <Text style={[
+                          styles.countdownDays,
+                          daysUntil === 0 && styles.countdownDaysToday,
+                        ]}>
+                          {daysUntil === 0 ? 'TODAY!' : daysUntil}
+                        </Text>
+                        {daysUntil > 0 && (
+                          <Text style={styles.countdownLabel}>
+                            {daysUntil === 1 ? 'day left' : 'days left'}
                           </Text>
-                          <TouchableOpacity
-                            onPress={() => handleDeleteChecklistItem(reminder.id, item.id)}
-                            style={styles.checklistDeleteButton}
-                          >
-                            <Text style={styles.checklistDeleteIcon}>🗑️</Text>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                      
-                      {/* Add New Item */}
-                      <View style={styles.addChecklistItemContainer}>
-                        <TextInput
-                          style={styles.addChecklistItemInput}
-                          placeholder="Add preparation item..."
-                          placeholderTextColor="#999"
-                          value={newChecklistText[reminder.id] || ''}
-                          onChangeText={(text) => setNewChecklistText(prev => ({ ...prev, [reminder.id]: text }))}
-                          onSubmitEditing={() => handleAddChecklistItem(reminder.id)}
-                        />
-                        <TouchableOpacity
-                          style={styles.addChecklistItemButton}
-                          onPress={() => handleAddChecklistItem(reminder.id)}
-                        >
-                          <Text style={styles.addChecklistItemButtonText}>+</Text>
-                        </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+
+                    <View style={styles.reminderHeader}>
+                      <View style={styles.reminderTitleRow}>
+                        <Text style={styles.reminderTitle}>
+                          {reminder.title}
+                        </Text>
+                        {reminder.isRecurring && (
+                          <Text style={styles.recurringBadge}>
+                            🔄 Yearly
+                          </Text>
+                        )}
                       </View>
                     </View>
-                  )}
 
-                  <View style={styles.actionButtons}>
+                    {reminder.description && (
+                      <Text style={styles.reminderDescription}>
+                        {reminder.description}
+                      </Text>
+                    )}
+
+                    <View style={styles.reminderDetails}>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>
+                          📅 Date:
+                        </Text>
+                        <Text style={styles.detailValue}>
+                          {formatDate(reminder.anniversaryDate)}
+                        </Text>
+                      </View>
+                      <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>
+                          ⏰ Remind:
+                        </Text>
+                        <Text style={styles.detailValue}>
+                          {reminder.reminderDaysBefore} days before
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Prepare List Toggle Button */}
                     <TouchableOpacity
-                      style={styles.editButton}
-                      onPress={() => router.push(`/edit-anniversary-reminder/${reminder.id}`)}
+                      style={styles.prepareListToggle}
+                      onPress={() => toggleExpanded(reminder.id)}
                     >
-                      <Text style={styles.editButtonText}>
-                        ✏️ Edit
+                      <Text style={styles.prepareListToggleText}>
+                        📋 Prepare List ({isExpanded ? items.length : (reminder.checklistCount || 0)})
+                      </Text>
+                      <Text style={styles.prepareListToggleIcon}>
+                        {isExpanded ? '▼' : '▶'}
                       </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.editButton}
-                      onPress={() => handleDelete(reminder.id, reminder.title)}
-                    >
-                      <Text style={styles.deleteButtonText}>
-                        🗑️ Delete
-                      </Text>
-                    </TouchableOpacity>
+
+                    {/* Expanded Prepare List */}
+                    {isExpanded && (
+                      <View style={styles.prepareListContainer}>
+                        {items.map(item => (
+                          <View key={item.id} style={styles.checklistItem}>
+                            <TouchableOpacity
+                              style={styles.checklistCheckbox}
+                              onPress={() => handleToggleChecklistItem(reminder.id, item.id, item.isCompleted)}
+                            >
+                              <Text style={styles.checklistCheckboxIcon}>
+                                {item.isCompleted ? '☑' : '☐'}
+                              </Text>
+                            </TouchableOpacity>
+
+                            <View style={{ flex: 1 }}>
+                              <Text style={[
+                                styles.checklistItemText,
+                                item.isCompleted && styles.checklistItemCompleted
+                              ]}>
+                                {item.title}
+                              </Text>
+                            </View>
+
+                            <TouchableOpacity
+                              onPress={() => handleDeleteChecklistItem(reminder.id, item.id)}
+                              style={styles.checklistDeleteButton}
+                            >
+                              <Text style={styles.checklistDeleteIcon}>🗑️</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+
+                        {/* Add New Item */}
+                        <View style={styles.addChecklistItemContainer}>
+                          <TextInput
+                            style={styles.addChecklistItemInput}
+                            placeholder="Add preparation item..."
+                            placeholderTextColor="#999"
+                            value={newChecklistText[reminder.id] || ''}
+                            onChangeText={(text) => setNewChecklistText(prev => ({ ...prev, [reminder.id]: text }))}
+                            onSubmitEditing={() => handleAddChecklistItem(reminder.id)}
+                          />
+                          <TouchableOpacity
+                            style={styles.addChecklistItemButton}
+                            onPress={() => handleAddChecklistItem(reminder.id)}
+                          >
+                            <Text style={styles.addChecklistItemButtonText}>+</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => router.push(`/edit-anniversary-reminder/${reminder.id}`)}
+                      >
+                        <Text style={styles.editButtonText}>
+                          ✏️ Edit
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => handleDelete(reminder.id, reminder.title)}
+                      >
+                        <Text style={styles.deleteButtonText}>
+                          🗑️ Delete
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              );
-            })
+                );
+              })
           )}
         </ScrollView>
 

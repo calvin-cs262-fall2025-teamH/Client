@@ -132,6 +132,7 @@ export interface AnniversaryReminder {
   isEnabled: boolean;
   createdAt: string;
   updatedAt: string;
+  checklistCount?: number;
 }
 
 export interface CreateAnniversaryReminderRequest {
@@ -155,20 +156,24 @@ export interface UpdateAnniversaryReminderRequest {
 export interface ReminderChecklistItem {
   id: number;
   reminderId: number;
-  text: string;
+  title: string;
   isCompleted: boolean;
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
+  createdBy?: number;
+  isShared?: boolean;
 }
 
 export interface CreateChecklistItemRequest {
   title: string;
+  isShared?: boolean;
 }
 
 export interface UpdateChecklistItemRequest {
   title?: string;
   isCompleted?: boolean;
+  isShared?: boolean;
 }
 
 // ============= Prayer Types =============
