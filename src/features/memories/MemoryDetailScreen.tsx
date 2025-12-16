@@ -299,37 +299,50 @@ export function MemoryDetailScreen() {
 
   const renderPhotoItem = ({ item, i }: { item: Photo; i: number }) => {
     const containerHeight = photoHeights[i] || 200; // Default height until loaded
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
 
     return (
-      <TouchableOpacity
-        activeOpacity={0.9}
-        style={[styles.photoContainer, { height: containerHeight }]}
-        onPress={() => {
-          setCurrentImageIndex(i);
-          setIsImageViewVisible(true);
-        }}
-        onLongPress={() => handleDeletePhoto(i)}
-        delayLongPress={500}
-      >
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={styles.photo}
-          onLoad={(event) => {
-            const { width, height } = event.nativeEvent.source;
-            if (width && height) {
-              // Calculate height based on image aspect ratio and screen width
-              const screenWidth = Dimensions.get('window').width;
-              const padding = 8; // margin from photoContainer style (4*2)
-              const columnWidth = (screenWidth - padding * 3) / 2; // 2 columns with gaps
-              const aspectRatio = height / width;
-              const calculatedHeight = columnWidth * aspectRatio;
-              // Cap between 150 and 500 for reasonable sizes on all devices
-              const finalHeight = Math.min(Math.max(calculatedHeight, 150), 500);
-              setPhotoHeights(prev => ({ ...prev, [i]: finalHeight }));
-            }
+      <Animated.View style={[styles.photoContainer, { height: containerHeight }, animatedStyle]}>
+        <TouchableOpacity
+          activeOpacity={1}
+          style={{ width: '100%', height: '100%' }}
+          onPressIn={() => {
+            scale.value = withSpring(0.95, { damping: 15, stiffness: 200 });
           }}
-        />
-      </TouchableOpacity>
+          onPressOut={() => {
+            scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+          }}
+          onPress={() => {
+            setCurrentImageIndex(i);
+            setIsImageViewVisible(true);
+          }}
+          onLongPress={() => handleDeletePhoto(i)}
+          delayLongPress={500}
+        >
+          <Image
+            source={{ uri: item.photoUrl }}
+            style={styles.photo}
+            onLoad={(event) => {
+              const { width, height } = event.nativeEvent.source;
+              if (width && height) {
+                // Calculate height based on image aspect ratio and screen width
+                const screenWidth = Dimensions.get('window').width;
+                const padding = 8; // margin from photoContainer style (4*2)
+                const columnWidth = (screenWidth - padding * 3) / 2; // 2 columns with gaps
+                const aspectRatio = height / width;
+                const calculatedHeight = columnWidth * aspectRatio;
+                // Cap between 150 and 500 for reasonable sizes on all devices
+                const finalHeight = Math.min(Math.max(calculatedHeight, 150), 500);
+                setPhotoHeights(prev => ({ ...prev, [i]: finalHeight }));
+              }
+            }}
+          />
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
 
@@ -590,12 +603,19 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 40,
+    paddingHorizontal: 4,
   },
   photoContainer: {
     margin: 4,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    transform: [{ scale: 1 }],
   },
   photo: {
     width: '100%',
