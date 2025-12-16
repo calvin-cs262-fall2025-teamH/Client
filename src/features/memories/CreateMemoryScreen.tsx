@@ -58,8 +58,10 @@ export function CreateMemoryScreen() {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.8,
+        aspect: [4, 3],
+        exif: false,
       });
 
       if (!result.canceled) {
