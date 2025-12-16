@@ -134,7 +134,7 @@ export default function AnniversaryRemindersScreen() {
     if (!text) return;
 
     try {
-      const response = await api.createChecklistItem(reminderId, { text });
+      const response = await api.createChecklistItem(reminderId, { content: text });
       if (response.success && response.data) {
         setChecklistItems(prev => ({
           ...prev,
@@ -331,7 +331,7 @@ export default function AnniversaryRemindersScreen() {
                             styles.checklistItemText,
                             item.isCompleted && styles.checklistItemCompleted
                           ]}>
-                            {item.text}
+                            {item.content}
                           </Text>
                           <TouchableOpacity
                             onPress={() => handleDeleteChecklistItem(reminder.id, item.id)}

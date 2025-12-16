@@ -155,7 +155,7 @@ export interface UpdateAnniversaryReminderRequest {
 export interface ReminderChecklistItem {
   id: number;
   reminderId: number;
-  text: string;
+  content: string;
   isCompleted: boolean;
   displayOrder: number;
   createdAt: string;
@@ -163,12 +163,12 @@ export interface ReminderChecklistItem {
 }
 
 export interface CreateChecklistItemRequest {
-  text: string;
+  content: string;
   displayOrder?: number;
 }
 
 export interface UpdateChecklistItemRequest {
-  text?: string;
+  content?: string;
   isCompleted?: boolean;
   isEnabled?: boolean;
 }
