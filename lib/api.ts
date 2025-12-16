@@ -26,7 +26,7 @@ import type {
 import * as SecureStore from "expo-secure-store";
 
 export const BASE =
-  process.env.EXPO_PUBLIC_API_BASE || "http://192.168.7.148:4000";
+  process.env.EXPO_PUBLIC_API_BASE || "http://153.106.82.166:4000";
 
 console.log('[api] BASE URL configured as:', BASE);
 
