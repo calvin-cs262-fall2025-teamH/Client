@@ -303,13 +303,14 @@ const styles = StyleSheet.create({
   collageWrapper: {
     borderRadius: 16,
     overflow: 'hidden',
-    height: 250,
+    aspectRatio: 4 / 3,
+    width: '100%',
     backgroundColor: '#F5F5F5',
   },
   singlePhoto: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    resizeMode: 'contain',
   },
   row: {
     flexDirection: 'row',
@@ -319,6 +320,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     marginRight: 2,
+    resizeMode: 'contain',
   },
   collageContainer: {
     flexDirection: 'row',
@@ -328,6 +330,7 @@ const styles = StyleSheet.create({
     flex: 2,
     height: '100%',
     marginRight: 2,
+    resizeMode: 'contain',
   },
   sidePhotos: {
     flex: 1,
@@ -337,6 +340,7 @@ const styles = StyleSheet.create({
   quarterPhoto: {
     width: '100%',
     height: '49.5%',
+    resizeMode: 'contain',
   },
   moreOverlay: {
     position: 'absolute',

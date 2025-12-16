@@ -17,6 +17,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import MasonryList from '@react-native-seoul/masonry-list';
 import ImageViewing from 'react-native-image-viewing';
@@ -42,6 +43,7 @@ export function MemoryDetailScreen() {
   const [isImageViewVisible, setIsImageViewVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [photoHeights, setPhotoHeights] = useState<{ [key: number]: number }>({});
 
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
@@ -191,8 +193,10 @@ export function MemoryDetailScreen() {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.8,
+        aspect: [4, 3],
+        exif: false,
       });
 
       if (!result.canceled) {
@@ -294,10 +298,12 @@ export function MemoryDetailScreen() {
   };
 
   const renderPhotoItem = ({ item, i }: { item: Photo; i: number }) => {
+    const containerHeight = photoHeights[i] || 200; // Default height until loaded
+
     return (
       <TouchableOpacity
         activeOpacity={0.9}
-        style={[styles.photoContainer, { height: i % 2 === 0 ? 200 : 280 }]}
+        style={[styles.photoContainer, { height: containerHeight }]}
         onPress={() => {
           setCurrentImageIndex(i);
           setIsImageViewVisible(true);
@@ -305,7 +311,24 @@ export function MemoryDetailScreen() {
         onLongPress={() => handleDeletePhoto(i)}
         delayLongPress={500}
       >
-        <Image source={{ uri: item.photoUrl }} style={styles.photo} />
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={styles.photo}
+          onLoad={(event) => {
+            const { width, height } = event.nativeEvent.source;
+            if (width && height) {
+              // Calculate height based on image aspect ratio and screen width
+              const screenWidth = Dimensions.get('window').width;
+              const padding = 8; // margin from photoContainer style (4*2)
+              const columnWidth = (screenWidth - padding * 3) / 2; // 2 columns with gaps
+              const aspectRatio = height / width;
+              const calculatedHeight = columnWidth * aspectRatio;
+              // Cap between 150 and 500 for reasonable sizes on all devices
+              const finalHeight = Math.min(Math.max(calculatedHeight, 150), 500);
+              setPhotoHeights(prev => ({ ...prev, [i]: finalHeight }));
+            }
+          }}
+        />
       </TouchableOpacity>
     );
   };
@@ -578,6 +601,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+    backgroundColor: '#F0F0F0',
   },
   footerContainer: {
     flexDirection: 'row',
