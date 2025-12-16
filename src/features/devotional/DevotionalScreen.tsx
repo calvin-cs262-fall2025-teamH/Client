@@ -28,7 +28,7 @@ export function DevotionalScreen() {
   const [plans, setPlans] = useState<DevotionalPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // State
   const [mode, setMode] = useState<Mode>('couple');
   const [selectedPlan, setSelectedPlan] = useState<DevotionalPlan | null>(null);
@@ -43,7 +43,7 @@ export function DevotionalScreen() {
   const [endBook, setEndBook] = useState(BIBLE_BOOKS[0]);
   const [endChapter, setEndChapter] = useState(10);
   const [chaptersPerDay, setChaptersPerDay] = useState(1);
-  
+
   // Selection Modal State
   const [selectionType, setSelectionType] = useState<SelectionType>(null);
 
@@ -130,7 +130,7 @@ export function DevotionalScreen() {
       newSelected.add(id);
     }
     setSelectedItems(newSelected);
-    
+
     if (newSelected.size === 0) {
       setSelectionMode(false);
     }
@@ -150,7 +150,7 @@ export function DevotionalScreen() {
     );
 
     try {
-      const response = isCustom 
+      const response = isCustom
         ? await api.toggleCustomDevotional(id)
         : await api.toggleDevotional(id);
 
@@ -174,13 +174,13 @@ export function DevotionalScreen() {
 
   const completedCount = plans.filter(p => p.is_completed).length;
   const progress = plans.length > 0 ? completedCount / plans.length : 0;
-  
+
   const activePlans = plans.filter(p => !p.is_completed);
   const completedPlans = plans.filter(p => p.is_completed);
 
   const renderItem = ({ item }: { item: DevotionalPlan }) => {
     const isSelected = selectedItems.has(item.id);
-    
+
     return (
       <TouchableOpacity
         style={[styles.card, isSelected && styles.cardSelected]}
@@ -276,6 +276,7 @@ export function DevotionalScreen() {
           onPress={() => {
             setMode('couple');
             setSelectionMode(false);
+            setSelectedItems(new Set());
           }}
         >
           <Text style={[styles.tabText, mode === 'couple' && styles.activeTabText]}>Couples</Text>
@@ -290,7 +291,7 @@ export function DevotionalScreen() {
 
       {mode === 'year' && !selectionMode && (
         <View style={styles.actionBar}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.addChaptersButton}
             onPress={() => setShowCustomModal(true)}
           >
@@ -313,14 +314,22 @@ export function DevotionalScreen() {
 
       {loading ? (
         <ActivityIndicator size="large" color={Colors.light.tint} style={{ marginTop: 20 }} />
-      ) : mode === 'year' && plans.length === 0 ? (
+      ) : plans.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="book-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyStateText}>Start Your Reading Plan</Text>
-          <Text style={styles.emptyStateSubtext}>Add chapters to build your custom reading list.</Text>
-          <TouchableOpacity style={styles.setupButton} onPress={() => setShowCustomModal(true)}>
-            <Text style={styles.setupButtonText}>Add Chapters</Text>
-          </TouchableOpacity>
+          <Text style={styles.emptyStateText}>
+            {mode === 'year' ? 'Start Your Reading Plan' : 'No Devotionals Yet'}
+          </Text>
+          <Text style={styles.emptyStateSubtext}>
+            {mode === 'year'
+              ? 'Add chapters to build your custom reading list.'
+              : 'Check back later for couples devotionals.'}
+          </Text>
+          {mode === 'year' && (
+            <TouchableOpacity style={styles.setupButton} onPress={() => setShowCustomModal(true)}>
+              <Text style={styles.setupButtonText}>Add Chapters</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <FlatList
@@ -334,17 +343,17 @@ export function DevotionalScreen() {
           ListFooterComponent={
             completedPlans.length > 0 ? (
               <View style={{ marginTop: 20 }}>
-                <TouchableOpacity 
-                  style={styles.completedHeader} 
+                <TouchableOpacity
+                  style={styles.completedHeader}
                   onPress={() => setShowCompleted(!showCompleted)}
                 >
                   <Text style={styles.completedHeaderText}>
                     Completed ({completedPlans.length})
                   </Text>
-                  <Ionicons 
-                    name={showCompleted ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color="#666" 
+                  <Ionicons
+                    name={showCompleted ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color="#666"
                   />
                 </TouchableOpacity>
                 {showCompleted && (
@@ -433,7 +442,7 @@ export function DevotionalScreen() {
             {selectionType ? (
               <View style={{ flex: 1 }}>
                 <View style={styles.selectionHeader}>
-                  <TouchableOpacity onPress={() => setSelectionType(null)} style={styles.backButton}>
+                  <TouchableOpacity onPress={() => setSelectionType(null)} style={styles.selectionBackButton}>
                     <Ionicons name="arrow-back" size={24} color="#333" />
                   </TouchableOpacity>
                   <Text style={styles.selectionTitle}>
@@ -483,15 +492,15 @@ export function DevotionalScreen() {
 
                 <Text style={styles.label}>Start Reading</Text>
                 <View style={styles.row}>
-                  <TouchableOpacity 
-                    style={[styles.selector, { flex: 2, marginRight: 8 }]} 
+                  <TouchableOpacity
+                    style={[styles.selector, { flex: 2, marginRight: 8 }]}
                     onPress={() => setSelectionType('startBook')}
                   >
                     <Text style={styles.selectorText}>{startBook.name}</Text>
                     <Ionicons name="chevron-down" size={16} color="#666" />
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.selector, { flex: 1 }]} 
+                  <TouchableOpacity
+                    style={[styles.selector, { flex: 1 }]}
                     onPress={() => setSelectionType('startChapter')}
                   >
                     <Text style={styles.selectorText}>Ch {startChapter}</Text>
@@ -501,15 +510,15 @@ export function DevotionalScreen() {
 
                 <Text style={styles.label}>End Reading</Text>
                 <View style={styles.row}>
-                  <TouchableOpacity 
-                    style={[styles.selector, { flex: 2, marginRight: 8 }]} 
+                  <TouchableOpacity
+                    style={[styles.selector, { flex: 2, marginRight: 8 }]}
                     onPress={() => setSelectionType('endBook')}
                   >
                     <Text style={styles.selectorText}>{endBook.name}</Text>
                     <Ionicons name="chevron-down" size={16} color="#666" />
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.selector, { flex: 1 }]} 
+                  <TouchableOpacity
+                    style={[styles.selector, { flex: 1 }]}
                     onPress={() => setSelectionType('endChapter')}
                   >
                     <Text style={styles.selectorText}>Ch {endChapter}</Text>
@@ -519,14 +528,14 @@ export function DevotionalScreen() {
 
                 <Text style={styles.label}>Chapters per Day</Text>
                 <View style={styles.stepperContainer}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.stepperButton}
                     onPress={() => setChaptersPerDay(Math.max(1, chaptersPerDay - 1))}
                   >
                     <Ionicons name="remove" size={24} color={Colors.light.tint} />
                   </TouchableOpacity>
                   <Text style={styles.stepperValue}>{chaptersPerDay}</Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.stepperButton}
                     onPress={() => setChaptersPerDay(chaptersPerDay + 1)}
                   >
@@ -539,7 +548,7 @@ export function DevotionalScreen() {
                     style={[styles.button, styles.buttonClose]}
                     onPress={() => setShowCustomModal(false)}
                   >
-                    <Text style={styles.textStyle}>Cancel</Text>
+                    <Text style={styles.cancelTextStyle}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.button, styles.buttonSave]}
@@ -1018,9 +1027,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
-  backButton: {
+  selectionBackButton: {
     padding: 8,
     marginRight: 8,
+  },
+  cancelTextStyle: {
+    color: '#666',
+    fontWeight: '700',
+    fontSize: 16,
   },
   selectionTitle: {
     fontSize: 18,
